@@ -32,8 +32,6 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun NewHome() {
 
-    var expanded by remember { mutableStateOf(true) }
-
     Column(
         modifier = Modifier.fillMaxSize(),
     ) {
@@ -56,46 +54,13 @@ fun NewHome() {
             modifier = Modifier.height(20.dp)
         )
 
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(start = 15.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Breakfast",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
-                )
+        val  sections = listOf("Breakfast", "Launch", "Dinner")
 
-                Icon(
-                    modifier = Modifier.clickable { expanded = !expanded },
-                    imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = null
-                )
+        LazyColumn {
+            items(sections.size) { index ->
+                val title = sections[index]
 
-                Text("Add")
-
-            }
-
-            if (expanded) {
-
-                val  products = listOf("Rice", "Chicken", "Pizza")
-
-                LazyColumn (
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 0.dp, end = 0.dp, top = 10.dp, bottom = 0.dp)
-                ) {
-                    items(products.size) { index ->
-                        val product = products[index]
-
-                        ProductEntry(product)
-                    }
-                }
+                MealSection(title)
             }
         }
     }

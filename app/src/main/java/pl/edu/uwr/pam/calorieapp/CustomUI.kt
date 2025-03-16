@@ -22,10 +22,12 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -68,7 +70,8 @@ fun ScreenTitle(title: String) {
 fun CustomButton(content: String , function: () -> Unit) {
 
     Button(
-        modifier = Modifier.padding(4.dp)
+        modifier = Modifier
+            .padding(4.dp)
             .fillMaxWidth()
             .shadow(
                 elevation = 3.dp,
@@ -99,7 +102,8 @@ fun CustomTextField(
     onValueChange: (String) -> Unit
 ) {
     TextField(
-        modifier = Modifier.padding(4.dp)
+        modifier = Modifier
+            .padding(4.dp)
             .fillMaxWidth()
             .shadow(
                 elevation = 3.dp,
@@ -193,7 +197,9 @@ fun ProductEntry(product: String) {
             modifier = Modifier.padding(top = 10.dp)
         ) {
             Text(
-                modifier = Modifier.padding(start = 15.dp).weight(1.0f),
+                modifier = Modifier
+                    .padding(start = 15.dp)
+                    .weight(1.0f),
                 text = product,
                 fontSize = 18.sp,
             )
@@ -237,4 +243,63 @@ fun ProductEntry(product: String) {
 @Composable
 fun ProductEntryPreview() {
     ProductEntry("Beacon")
+}
+
+@Composable
+fun MealSection(title: String) {
+
+    var expanded by remember { mutableStateOf(true) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 15.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+
+            Icon(
+                modifier = Modifier.clickable { expanded = !expanded },
+                imageVector = if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null
+            )
+
+            AddButton()
+        }
+
+        if (expanded) {
+
+            val  products = listOf("Rice", "Chicken", "Pizza")
+            for (product in products) ProductEntry(product)
+        }
+    }
+}
+
+@Composable
+fun AddButton() {
+    OutlinedButton(
+        onClick = {},
+        colors = ButtonDefaults.buttonColors(
+            contentColor = Color.Black,
+            containerColor = Color.Transparent,
+
+        )
+    ) {
+        Text("Add")
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AddButtonPreview() {
+    AddButton()
 }
