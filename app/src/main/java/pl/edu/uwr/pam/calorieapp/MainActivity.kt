@@ -57,7 +57,7 @@ fun BottomNavGraph(navController: NavHostController, padding: PaddingValues){
         startDestination = Screens.Home.route,
         modifier = Modifier.padding(padding)
     ) {
-        composable(route = Screens.Home.route){ NewHome() }
+        composable(route = Screens.Home.route){ RoomTestScreen() }
     }
 }
 

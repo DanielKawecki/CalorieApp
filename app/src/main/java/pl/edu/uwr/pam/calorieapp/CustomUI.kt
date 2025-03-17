@@ -186,7 +186,7 @@ fun NutritionIndicator(title: String, unit: String, amount: Int, total: Int, col
 }
 
 @Composable
-fun ProductEntry(product: String) {
+fun ProductEntry(product: Product, onDelete: () -> Unit) {
 
     Column (
         modifier = Modifier
@@ -200,11 +200,11 @@ fun ProductEntry(product: String) {
                 modifier = Modifier
                     .padding(start = 15.dp)
                     .weight(1.0f),
-                text = product,
+                text = product.name,
                 fontSize = 18.sp,
             )
             Icon(
-                modifier = Modifier.padding(end = 15.dp),
+                modifier = Modifier.padding(end = 15.dp).clickable { onDelete() },
                 imageVector = Icons.Default.Clear,
                 contentDescription = null
             )
@@ -213,25 +213,25 @@ fun ProductEntry(product: String) {
         Row () {
             Text(
                 modifier = Modifier.padding(start = 15.dp, bottom = 10.dp),
-                text = "37 kcal",
+                text = "${product.calorie} kcal",
                 fontSize = 14.sp,
                 color = Color.Gray
             )
             Text(
                 modifier = Modifier.padding(start = 30.dp, bottom = 10.dp),
-                text = "2,4 g",
+                text = "${product.protein} g",
                 fontSize = 14.sp,
                 color = Color.Gray
             )
             Text(
                 modifier = Modifier.padding(start = 30.dp, bottom = 10.dp),
-                text = "37 g",
+                text = "${product.fats} g",
                 fontSize = 14.sp,
                 color = Color.Gray
             )
             Text(
                 modifier = Modifier.padding(start = 30.dp, bottom = 10.dp),
-                text = "2,4 g",
+                text = "${product.carbs} g",
                 fontSize = 14.sp,
                 color = Color.Gray
             )
@@ -242,7 +242,7 @@ fun ProductEntry(product: String) {
 @Preview(showBackground = true)
 @Composable
 fun ProductEntryPreview() {
-    ProductEntry("Beacon")
+//    ProductEntry(Product(0, "Salt", "20g", "Dinner", 237, 0.3, 2.3, 67.0, "23"))
 }
 
 @Composable
@@ -279,7 +279,7 @@ fun MealSection(title: String) {
         if (expanded) {
 
             val  products = listOf("Rice", "Chicken", "Pizza")
-            for (product in products) ProductEntry(product)
+//            for (product in products) ProductEntry(product)
         }
     }
 }
