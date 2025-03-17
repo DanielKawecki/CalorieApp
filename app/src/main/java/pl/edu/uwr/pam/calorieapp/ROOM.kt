@@ -28,13 +28,14 @@ import java.sql.Date
 data class Product(
     @PrimaryKey(autoGenerate = true) val id: Int,
     val name: String,
-    val amount: Float,
+    val amount: String,
     val meal: String,
     val calorie: Int,
     val protein: Double,
     val fats: Double,
     val carbs: Double,
-    val date: Date
+//    @ColumnInfo(defaultValue = "CURRENT_DATE")
+    val date: String
 )
 
 class Converters {
@@ -45,20 +46,27 @@ class Converters {
 
     @TypeConverter
     fun dateToTimestamp(date: Date?): Long? {
-        return date?.time?.toLong()
+        return date?.time
     }
 }
 
 @Dao
 interface ProductDao {
     @Query("SELECT * FROM products ORDER BY date ASC")
-    fun getProducts(): Flow<List<Product>>
+    fun getAllProducts(): Flow<List<Product>>
+
+    @Query("SELECT * FROM products WHERE DATE(date)=CURRENT_DATE ORDER BY date ASC")
+    fun getTodayProducts(): Flow<List<Product>>
 
     @Query("SELECT * FROM products WHERE id = :productId")
     fun getProductById(productId: Int): Flow<Product>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(product: Product)
+    suspend fun insertOLD(product: Product)
+
+    @Query("""INSERT INTO products (name, amount, meal, calorie, protein, fats, carbs, date) 
+        VALUES (:name, :amount, :meal, :calorie, :protein, :fats, :carbs, CURRENT_TIMESTAMP)""")
+    suspend fun insert(name: String, amount: String, meal: String, calorie: Int, protein: Double, fats: Double, carbs: Double)
 
     @Query("UPDATE products SET name = :name, calorie = :calorie WHERE id = :id")
     suspend fun updateProductById(id: Int, name: String, calorie: Int)
@@ -97,7 +105,8 @@ class ProductRepository(private val productDao: ProductDao, application: Applica
     val budget: Int
         get() = _budget
 
-    fun getProducts() = productDao.getProducts()
+    fun getAllProducts() = productDao.getAllProducts()
+    fun getTodayProducts() = productDao.getTodayProducts()
     fun getProductById(productId: Int) = productDao.getProductById(productId)
     suspend fun updateProductById(productId: Int, name: String, calorie: Int) =
         productDao.updateProductById(productId, name, calorie)
@@ -114,7 +123,9 @@ class ProductRepository(private val productDao: ProductDao, application: Applica
         val protein = response.items.sumOf { it.protein_g }
         val fats = response.items.sumOf { it.fat_total_g }
         val carbs = response.items.sumOf { it.carbohydrates_total_g }
-        productDao.insert(Product(0, name, 1.0f, meal, calorie.toInt(), protein, fats, carbs, date))
+//        productDao.insertOLD(Product(0, name, 1.0f, meal, calorie.toInt(), protein, fats, carbs, date))
+        println("Dziala")
+        productDao.insert(name, amount, meal, calorie.toInt(), protein, fats, carbs)
     }
 
     fun setBudget(calorieBudget: Int) {
@@ -139,6 +150,10 @@ class ProductViewModel(application: Application) : ViewModel() {
     val productState: StateFlow<List<Product>>
         get() = _productState
 
+    private val _todayProductState = MutableStateFlow<List<Product>>(emptyList())
+    val todayProductState: StateFlow<List<Product>>
+        get() = _todayProductState
+
     private val _budget: MutableStateFlow<Int> = MutableStateFlow(0)
     val budget: StateFlow<Int>
         get() = _budget
@@ -151,12 +166,21 @@ class ProductViewModel(application: Application) : ViewModel() {
         _budget.value = repository.budget
 
         fetchProducts()
+        fetchTodayProducts()
     }
 
     private fun fetchProducts() {
         viewModelScope.launch {
-            repository.getProducts().collect { users ->
+            repository.getAllProducts().collect { users ->
                 _productState.value = users
+            }
+        }
+    }
+
+    private fun fetchTodayProducts() {
+        viewModelScope.launch {
+            repository.getTodayProducts().collect { users ->
+                _todayProductState.value = users
             }
         }
     }

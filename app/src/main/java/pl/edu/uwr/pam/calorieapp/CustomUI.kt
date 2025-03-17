@@ -246,7 +246,7 @@ fun ProductEntryPreview() {
 }
 
 @Composable
-fun MealSection(title: String) {
+fun MealSection(title: String, products: List<Product>, viewModel: ProductViewModel) {
 
     var expanded by remember { mutableStateOf(true) }
 
@@ -277,9 +277,7 @@ fun MealSection(title: String) {
         }
 
         if (expanded) {
-
-            val  products = listOf("Rice", "Chicken", "Pizza")
-//            for (product in products) ProductEntry(product)
+            for (product in products) ProductEntry(product, { viewModel.deleteProductById(product.id) })
         }
     }
 }
