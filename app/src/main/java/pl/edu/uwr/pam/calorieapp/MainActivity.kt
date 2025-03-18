@@ -1,6 +1,7 @@
 package pl.edu.uwr.pam.calorieapp
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,7 +22,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.DefaultShadowColor
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -58,7 +62,12 @@ fun BottomNavGraph(navController: NavHostController, padding: PaddingValues){
         startDestination = Screens.Home.route,
         modifier = Modifier.padding(padding)
     ) {
-        composable(route = Screens.Home.route){ RoomTestScreen() }
+        composable(route = Screens.Home.route) { HomeScreen(navController) }
+        composable(route = Screens.History.route) { RoomTestScreen() }
+        composable(route = Screens.Add.route + "/{meal}") {
+            val meal = it.arguments?.getString("meal")
+            AddScreen(meal, navController)
+        }
     }
 }
 

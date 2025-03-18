@@ -246,7 +246,7 @@ fun ProductEntryPreview() {
 }
 
 @Composable
-fun MealSection(title: String, products: List<Product>, viewModel: ProductViewModel) {
+fun MealSection(title: String, products: List<Product>, viewModel: ProductViewModel, onAdd: () -> Unit) {
 
     var expanded by remember { mutableStateOf(true) }
 
@@ -273,7 +273,7 @@ fun MealSection(title: String, products: List<Product>, viewModel: ProductViewMo
                 contentDescription = null
             )
 
-            AddButton()
+            AddButton(onAdd)
         }
 
         if (expanded) {
@@ -283,9 +283,9 @@ fun MealSection(title: String, products: List<Product>, viewModel: ProductViewMo
 }
 
 @Composable
-fun AddButton() {
+fun AddButton(onAdd: () -> Unit) {
     OutlinedButton(
-        onClick = {},
+        onClick = { onAdd() },
         colors = ButtonDefaults.buttonColors(
             contentColor = Color.Black,
             containerColor = Color.Transparent,
@@ -299,5 +299,5 @@ fun AddButton() {
 @Preview(showBackground = true)
 @Composable
 fun AddButtonPreview() {
-    AddButton()
+//    AddButton()
 }

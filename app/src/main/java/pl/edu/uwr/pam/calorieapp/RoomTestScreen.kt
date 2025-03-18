@@ -13,9 +13,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role.Companion.Button
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import pl.edu.uwr.pam.calorieapp.ui.theme.CalorieAppTheme
 import java.sql.Date
 
 @Composable
@@ -30,6 +33,8 @@ fun RoomTestScreen() {
     val breakfastProducts = products.filter { it.meal == "Breakfast" }
     val launchProducts = products.filter { it.meal == "Launch" }
     val dinnerProducts = products.filter { it.meal == "Dinner" }
+
+    val calorieSum by viewModel.nutrientsSum.collectAsStateWithLifecycle()
 
     var productName by rememberSaveable { mutableStateOf("") }
     var amount by rememberSaveable { mutableStateOf("") }
@@ -56,7 +61,7 @@ fun RoomTestScreen() {
         )
 
         Button(
-            onClick = { viewModel.addWithNutrition(productName, amount, meal, Date(System.currentTimeMillis())) }
+            onClick = { viewModel.addWithNutrition(productName, amount, meal) }
         ) {
             Text("Add new")
         }
@@ -90,5 +95,10 @@ fun RoomTestScreen() {
                 onDelete = { viewModel.deleteProductById(product.id) }
             )
         }
+
+        Text(
+            text = "Calorie Sum: ${calorieSum.calorie}, ${calorieSum.protein}, ${calorieSum.fats}, ${calorieSum.carbs}",
+            fontSize = 20.sp
+        )
     }
 }

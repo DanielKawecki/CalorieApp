@@ -33,19 +33,22 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(navController: NavHostController) {
 
     val viewModel: ProductViewModel = viewModel(
         LocalViewModelStoreOwner.current!!,
         "ProductViewModel",
         ProductViewModelFactory(LocalContext.current.applicationContext as Application)
     )
-    val products by viewModel.productState.collectAsStateWithLifecycle()
+    val products by viewModel.todayProductState.collectAsStateWithLifecycle()
     val breakfastProducts = products.filter { it.meal == "Breakfast" }
     val launchProducts = products.filter { it.meal == "Launch" }
     val dinnerProducts = products.filter { it.meal == "Dinner" }
+
+    val nutrientSum by viewModel.nutrientsSum.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -59,10 +62,10 @@ fun HomeScreen() {
                 .padding(vertical = 5.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
-            NutritionIndicator("Kcal", "kcal", 1567, 2516, Color(238,137,237,255))
-            NutritionIndicator("Protein", "g", 58, 126, Color(152,218,254,255))
-            NutritionIndicator("Fat", "g", 42, 84, Color(227,211,152,255))
-            NutritionIndicator("Carbs", "g", 179, 324, Color(168,158,224,255))
+            NutritionIndicator("Kcal", "kcal", nutrientSum.calorie, 2516, Color(238,137,237,255))
+            NutritionIndicator("Protein", "g", nutrientSum.protein.toInt(), 126, Color(152,218,254,255))
+            NutritionIndicator("Fats", "g", nutrientSum.fats.toInt(), 84, Color(227,211,152,255))
+            NutritionIndicator("Carbs", "g", nutrientSum.carbs.toInt(), 324, Color(168,158,224,255))
         }
 
         Spacer(
@@ -77,7 +80,7 @@ fun HomeScreen() {
                 val title = sections[index]
                 val sectionProducts = productList[index]
 
-                MealSection(title, sectionProducts, viewModel)
+                MealSection(title, sectionProducts, viewModel) { navController.navigate(Screens.Add.route + "/$title") }
             }
         }
     }
@@ -86,5 +89,5 @@ fun HomeScreen() {
 @Preview(showBackground = true)
 @Composable
 fun HomePreview() {
-    HomeScreen()
+//    HomeScreen()
 }

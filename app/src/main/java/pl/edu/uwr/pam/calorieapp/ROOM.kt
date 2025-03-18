@@ -34,8 +34,14 @@ data class Product(
     val protein: Double,
     val fats: Double,
     val carbs: Double,
-//    @ColumnInfo(defaultValue = "CURRENT_DATE")
     val date: String
+)
+
+data class NutrientSet(
+    val calorie: Int,
+    val protein: Double,
+    val fats: Double,
+    val carbs: Double
 )
 
 class Converters {
@@ -60,6 +66,18 @@ interface ProductDao {
 
     @Query("SELECT * FROM products WHERE id = :productId")
     fun getProductById(productId: Int): Flow<Product>
+
+    @Query("SELECT SUM(calorie) FROM products WHERE DATE(date)=CURRENT_DATE")
+    fun getCalorieSum(): Flow<Int>
+
+    @Query("""
+        SELECT 
+            COALESCE(SUM(calorie), 0) AS calorie, 
+            COALESCE(SUM(protein), 0.0) AS protein, 
+            COALESCE(SUM(fats), 0.0) AS fats, 
+            COALESCE(SUM(carbs), 0.0) AS carbs 
+        FROM products WHERE DATE(date)=CURRENT_DATE""")
+    fun getNutrientsSum(): Flow<NutrientSet>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertOLD(product: Product)
@@ -117,16 +135,19 @@ class ProductRepository(private val productDao: ProductDao, application: Applica
         return api.getNutrition(query)
     }
 
-    suspend fun addWithNutrition(name: String, amount: String, meal: String, date: Date) {
+    suspend fun addWithNutrition(name: String, amount: String, meal: String) {
         val response = api.getNutrition("$amount of $name")
         val calorie = response.items.sumOf { it.calories }
         val protein = response.items.sumOf { it.protein_g }
         val fats = response.items.sumOf { it.fat_total_g }
         val carbs = response.items.sumOf { it.carbohydrates_total_g }
 //        productDao.insertOLD(Product(0, name, 1.0f, meal, calorie.toInt(), protein, fats, carbs, date))
-        println("Dziala")
         productDao.insert(name, amount, meal, calorie.toInt(), protein, fats, carbs)
     }
+
+    fun getCalorieSum() = productDao.getCalorieSum()
+
+    fun getNutrientsSum() = productDao.getNutrientsSum()
 
     fun setBudget(calorieBudget: Int) {
         val edit = sharedPreferences.edit()
@@ -154,6 +175,14 @@ class ProductViewModel(application: Application) : ViewModel() {
     val todayProductState: StateFlow<List<Product>>
         get() = _todayProductState
 
+    private val _calorieSum: MutableStateFlow<Int> = MutableStateFlow(0)
+    val calorieSum: StateFlow<Int>
+        get() = _calorieSum
+
+    private val _nutrientsSum = MutableStateFlow(NutrientSet(0, 0.0, 0.0, 0.0))
+    val nutrientsSum: StateFlow<NutrientSet>
+        get() = _nutrientsSum
+
     private val _budget: MutableStateFlow<Int> = MutableStateFlow(0)
     val budget: StateFlow<Int>
         get() = _budget
@@ -167,6 +196,8 @@ class ProductViewModel(application: Application) : ViewModel() {
 
         fetchProducts()
         fetchTodayProducts()
+//        fetchCalorieSum()
+        fetchNutrientsSum()
     }
 
     private fun fetchProducts() {
@@ -181,6 +212,22 @@ class ProductViewModel(application: Application) : ViewModel() {
         viewModelScope.launch {
             repository.getTodayProducts().collect { users ->
                 _todayProductState.value = users
+            }
+        }
+    }
+
+    private fun fetchCalorieSum() {
+        viewModelScope.launch {
+            repository.getCalorieSum().collect { users ->
+                _calorieSum.value = users
+            }
+        }
+    }
+
+    private fun fetchNutrientsSum() {
+        viewModelScope.launch {
+            repository.getNutrientsSum().collect { users ->
+                _nutrientsSum.value = users
             }
         }
     }
@@ -215,9 +262,9 @@ class ProductViewModel(application: Application) : ViewModel() {
         }
     }
 
-    fun addWithNutrition(name: String, amount: String, meal: String, date: Date) {
+    fun addWithNutrition(name: String, amount: String, meal: String) {
         viewModelScope.launch {
-            repository.addWithNutrition(name, amount, meal, date)
+            repository.addWithNutrition(name, amount, meal)
         }
     }
 
