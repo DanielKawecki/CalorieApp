@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 
 @Composable
@@ -186,12 +187,13 @@ fun NutritionIndicator(title: String, unit: String, amount: Int, total: Int, col
 }
 
 @Composable
-fun ProductEntry(product: Product, onDelete: () -> Unit) {
+fun ProductEntry(product: Product, onDelete: () -> Unit, onEdit: () -> Unit) {
 
     Column (
         modifier = Modifier
             .padding(top = 5.dp)
             .background(Color(240, 240, 240))
+            .clickable { onEdit() }
     ) {
         Row (
             modifier = Modifier.padding(top = 10.dp)
@@ -246,7 +248,7 @@ fun ProductEntryPreview() {
 }
 
 @Composable
-fun MealSection(title: String, products: List<Product>, viewModel: ProductViewModel, onAdd: () -> Unit) {
+fun MealSection(title: String, products: List<Product>, viewModel: ProductViewModel, navController: NavController, onAdd: () -> Unit) {
 
     var expanded by remember { mutableStateOf(true) }
 
@@ -273,11 +275,17 @@ fun MealSection(title: String, products: List<Product>, viewModel: ProductViewMo
                 contentDescription = null
             )
 
-            AddButton(onAdd)
+            AddButton{ navController.navigate(Screens.Add.route + "/$title") }
         }
 
         if (expanded) {
-            for (product in products) ProductEntry(product, { viewModel.deleteProductById(product.id) })
+            for (product in products) ProductEntry(
+                product,
+                onDelete = { viewModel.deleteProductById(product.id) },
+                onEdit = {
+                    println("Before navController: ${product.id}, ${product.name}, ${product.amount}")
+                    navController.navigate(Screens.Edit.route + "/${product.id}/${product.name}/${product.amount}") }
+            )
         }
     }
 }

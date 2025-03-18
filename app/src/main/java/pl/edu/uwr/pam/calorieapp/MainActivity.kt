@@ -68,6 +68,12 @@ fun BottomNavGraph(navController: NavHostController, padding: PaddingValues){
             val meal = it.arguments?.getString("meal")
             AddScreen(meal, navController)
         }
+        composable(route = Screens.Edit.route + "/{idArg}/{nameArg}/{amountArg}") {
+            val id = it.arguments?.getString("idArg")
+            val name = it.arguments?.getString("nameArg")
+            val amount = it.arguments?.getString("amountArg")
+            EditScreen(id, name, amount, navController)
+        }
     }
 }
 

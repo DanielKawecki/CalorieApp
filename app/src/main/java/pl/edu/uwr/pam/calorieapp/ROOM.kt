@@ -44,18 +44,6 @@ data class NutrientSet(
     val carbs: Double
 )
 
-class Converters {
-    @TypeConverter
-    fun fromTimestamp(value: Long?): Date? {
-        return value?.let { Date(it) }
-    }
-
-    @TypeConverter
-    fun dateToTimestamp(date: Date?): Long? {
-        return date?.time
-    }
-}
-
 @Dao
 interface ProductDao {
     @Query("SELECT * FROM products ORDER BY date ASC")
@@ -66,9 +54,6 @@ interface ProductDao {
 
     @Query("SELECT * FROM products WHERE id = :productId")
     fun getProductById(productId: Int): Flow<Product>
-
-    @Query("SELECT SUM(calorie) FROM products WHERE DATE(date)=CURRENT_DATE")
-    fun getCalorieSum(): Flow<Int>
 
     @Query("""
         SELECT 
@@ -86,8 +71,8 @@ interface ProductDao {
         VALUES (:name, :amount, :meal, :calorie, :protein, :fats, :carbs, CURRENT_TIMESTAMP)""")
     suspend fun insert(name: String, amount: String, meal: String, calorie: Int, protein: Double, fats: Double, carbs: Double)
 
-    @Query("UPDATE products SET name = :name, calorie = :calorie WHERE id = :id")
-    suspend fun updateProductById(id: Int, name: String, calorie: Int)
+    @Query("UPDATE products SET name=:name, amount=:amount, calorie=:calorie, protein=:protein, fats=:fats, carbs=:carbs WHERE id = :id")
+    suspend fun updateProductById(id: Int, name: String, amount: String, calorie: Int, protein: Double, fats: Double, carbs: Double)
 
     @Query("DELETE FROM products WHERE id = :productId")
     suspend fun deleteProductById(productId: Int)
@@ -97,7 +82,6 @@ interface ProductDao {
 }
 
 @Database(entities = [Product::class], version = 1, exportSchema = false)
-@TypeConverters(Converters::class)
 abstract class ProductDatabase : RoomDatabase() {
     abstract fun productDao(): ProductDao
 
@@ -126,8 +110,16 @@ class ProductRepository(private val productDao: ProductDao, application: Applica
     fun getAllProducts() = productDao.getAllProducts()
     fun getTodayProducts() = productDao.getTodayProducts()
     fun getProductById(productId: Int) = productDao.getProductById(productId)
-    suspend fun updateProductById(productId: Int, name: String, calorie: Int) =
-        productDao.updateProductById(productId, name, calorie)
+
+    suspend fun updateProductById(productId: Int, name: String, amount: String) {
+        val response = api.getNutrition("$amount of $name")
+        val calorie = response.items.sumOf { it.calories }
+        val protein = response.items.sumOf { it.protein_g }
+        val fats = response.items.sumOf { it.fat_total_g }
+        val carbs = response.items.sumOf { it.carbohydrates_total_g }
+        productDao.updateProductById(productId, name, amount, calorie.toInt(), protein, fats, carbs)
+    }
+
     suspend fun deleteProductById(productId: Int) = productDao.deleteProductById(productId)
     suspend fun clear() = productDao.deleteAll()
 
@@ -141,11 +133,8 @@ class ProductRepository(private val productDao: ProductDao, application: Applica
         val protein = response.items.sumOf { it.protein_g }
         val fats = response.items.sumOf { it.fat_total_g }
         val carbs = response.items.sumOf { it.carbohydrates_total_g }
-//        productDao.insertOLD(Product(0, name, 1.0f, meal, calorie.toInt(), protein, fats, carbs, date))
         productDao.insert(name, amount, meal, calorie.toInt(), protein, fats, carbs)
     }
-
-    fun getCalorieSum() = productDao.getCalorieSum()
 
     fun getNutrientsSum() = productDao.getNutrientsSum()
 
@@ -175,10 +164,6 @@ class ProductViewModel(application: Application) : ViewModel() {
     val todayProductState: StateFlow<List<Product>>
         get() = _todayProductState
 
-    private val _calorieSum: MutableStateFlow<Int> = MutableStateFlow(0)
-    val calorieSum: StateFlow<Int>
-        get() = _calorieSum
-
     private val _nutrientsSum = MutableStateFlow(NutrientSet(0, 0.0, 0.0, 0.0))
     val nutrientsSum: StateFlow<NutrientSet>
         get() = _nutrientsSum
@@ -196,7 +181,6 @@ class ProductViewModel(application: Application) : ViewModel() {
 
         fetchProducts()
         fetchTodayProducts()
-//        fetchCalorieSum()
         fetchNutrientsSum()
     }
 
@@ -212,14 +196,6 @@ class ProductViewModel(application: Application) : ViewModel() {
         viewModelScope.launch {
             repository.getTodayProducts().collect { users ->
                 _todayProductState.value = users
-            }
-        }
-    }
-
-    private fun fetchCalorieSum() {
-        viewModelScope.launch {
-            repository.getCalorieSum().collect { users ->
-                _calorieSum.value = users
             }
         }
     }
@@ -244,9 +220,9 @@ class ProductViewModel(application: Application) : ViewModel() {
         return productFlow
     }
 
-    fun updateProductById(productId: Int, name: String, calorie: Int) {
+    fun updateProductById(productId: Int, name: String, amount: String) {
         viewModelScope.launch {
-            repository.updateProductById(productId, name, calorie)
+            repository.updateProductById(productId, name, amount)
         }
     }
 

@@ -72,29 +72,30 @@ fun RoomTestScreen() {
             Text("Clear")
         }
 
-        Text("Breakfast")
-        for (product in breakfastProducts) {
-            ProductEntry(
-                product = product,
-                onDelete = { viewModel.deleteProductById(product.id) }
-            )
-        }
-
-        Text("Launch")
-        for (product in launchProducts) {
-            ProductEntry(
-                product = product,
-                onDelete = { viewModel.deleteProductById(product.id) }
-            )
-        }
-
-        Text("Dinner")
-        for (product in dinnerProducts) {
-            ProductEntry(
-                product = product,
-                onDelete = { viewModel.deleteProductById(product.id) }
-            )
-        }
+//        Text("Breakfast")
+//        for (product in breakfastProducts) {
+//            ProductEntry(
+//                product = product,
+//                onDelete = { viewModel.deleteProductById(product.id) },
+//                onEdit = {}
+//            )
+//        }
+//
+//        Text("Launch")
+//        for (product in launchProducts) {
+//            ProductEntry(
+//                product = product,
+//                onDelete = { viewModel.deleteProductById(product.id) }
+//            )
+//        }
+//
+//        Text("Dinner")
+//        for (product in dinnerProducts) {
+//            ProductEntry(
+//                product = product,
+//                onDelete = { viewModel.deleteProductById(product.id) }
+//            )
+//        }
 
         Text(
             text = "Calorie Sum: ${calorieSum.calorie}, ${calorieSum.protein}, ${calorieSum.fats}, ${calorieSum.carbs}",

@@ -44,11 +44,7 @@ fun HomeScreen(navController: NavHostController) {
         ProductViewModelFactory(LocalContext.current.applicationContext as Application)
     )
     val products by viewModel.todayProductState.collectAsStateWithLifecycle()
-    val breakfastProducts = products.filter { it.meal == "Breakfast" }
-    val launchProducts = products.filter { it.meal == "Launch" }
-    val dinnerProducts = products.filter { it.meal == "Dinner" }
-
-    val nutrientSum by viewModel.nutrientsSum.collectAsStateWithLifecycle()
+    val total by viewModel.nutrientsSum.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -62,25 +58,24 @@ fun HomeScreen(navController: NavHostController) {
                 .padding(vertical = 5.dp),
             horizontalArrangement = Arrangement.SpaceAround
         ) {
-            NutritionIndicator("Kcal", "kcal", nutrientSum.calorie, 2516, Color(238,137,237,255))
-            NutritionIndicator("Protein", "g", nutrientSum.protein.toInt(), 126, Color(152,218,254,255))
-            NutritionIndicator("Fats", "g", nutrientSum.fats.toInt(), 84, Color(227,211,152,255))
-            NutritionIndicator("Carbs", "g", nutrientSum.carbs.toInt(), 324, Color(168,158,224,255))
+            NutritionIndicator("Kcal", "kcal", total.calorie, 2516, Color(238,137,237,255))
+            NutritionIndicator("Protein", "g", total.protein.toInt(), 126, Color(152,218,254,255))
+            NutritionIndicator("Fats", "g", total.fats.toInt(), 84, Color(227,211,152,255))
+            NutritionIndicator("Carbs", "g", total.carbs.toInt(), 324, Color(168,158,224,255))
         }
 
         Spacer(
             modifier = Modifier.height(20.dp)
         )
 
-        val sections = listOf("Breakfast", "Launch", "Dinner")
-        val productList = listOf(breakfastProducts, launchProducts, dinnerProducts)
+        val sections = listOf("Breakfast", "Lunch", "Dinner")
 
         LazyColumn {
             items(sections.size) { index ->
                 val title = sections[index]
-                val sectionProducts = productList[index]
+                val sectionProducts = products.filter { it.meal == title }
 
-                MealSection(title, sectionProducts, viewModel) { navController.navigate(Screens.Add.route + "/$title") }
+                MealSection(title, sectionProducts, viewModel, navController) { navController.navigate(Screens.Add.route + "/$title") }
             }
         }
     }
