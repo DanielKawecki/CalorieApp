@@ -27,6 +27,9 @@ fun MealsTestScreen() {
     val meals by viewModel.customMeals.collectAsStateWithLifecycle()
 
     var mealName by rememberSaveable { mutableStateOf("") }
+    var productName by rememberSaveable { mutableStateOf("") }
+    var productAmount by rememberSaveable { mutableStateOf("") }
+    var mealId by rememberSaveable { mutableStateOf("") }
 
     Column () {
 
@@ -35,13 +38,37 @@ fun MealsTestScreen() {
         TextField(
             value = mealName,
             onValueChange = { mealName = it },
-            label = { Text("Name") }
+            label = { Text("Meal Name") }
+        )
+
+        TextField(
+            value = productName,
+            onValueChange = { productName = it },
+            label = { Text("Product Name") }
+        )
+
+        TextField(
+            value = productAmount,
+            onValueChange = { productAmount = it },
+            label = { Text("Product Amount") }
+        )
+
+        TextField(
+            value = mealId,
+            onValueChange = { mealId = it },
+            label = { Text("Meal Id") }
         )
 
         Button(
             onClick = { viewModel.addCustomMeal(mealName) }
         ) {
-            Text("Add new")
+            Text("Add Meal")
+        }
+
+        Button(
+            onClick = { viewModel.addMealDetail(mealId.toInt(), productName, productAmount) }
+        ) {
+            Text("Add Meal Product")
         }
 
 //        Button(

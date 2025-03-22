@@ -128,11 +128,11 @@ interface MealDao {
 
 @Dao
 interface MealDetailDao {
+    @Query("SELECT * FROM meal_details WHERE m_id = :mealId")
+    fun getMealDetails(mealId: Int): Flow<List<MealDetail>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMealDetail(mealDetail: MealDetail)
-
-    @Query("SELECT * FROM meal_details WHERE m_id = :mealId")
-    suspend fun getMealDetails(mealId: Int): List<MealDetail>
 
     @Query("DELETE FROM meal_details WHERE m_id = :mealId")
     suspend fun deleteMealDetailByMealId(mealId: Int)
@@ -209,6 +209,23 @@ class ProductRepository(
     suspend fun addCustomMeal(meal: Meal) = mealDao.insertMeal(meal)
     suspend fun deleteCustomMealById(id: Int) = mealDao.deleteMealById(id)
 
+    //    --------------------- MEAL DETAIL DAO ------------------------
+
+    fun getCustomMealDetails(id: Int) = mealDetailDao.getMealDetails(id)
+
+    suspend fun addMealDetails(id: Int,  name: String, amount: String) {
+        val response = api.getNutrition("$amount of $name")
+        val calorie = response.items.sumOf { it.calories }
+        val protein = response.items.sumOf { it.protein_g }
+        val fats = response.items.sumOf { it.fat_total_g }
+        val carbs = response.items.sumOf { it.carbohydrates_total_g }
+        mealDetailDao.insertMealDetail(MealDetail(0, id, name, amount, calorie.toInt(), protein, fats, carbs))
+    }
+
+    suspend fun deleteMealDetailByMealId(id: Int) = mealDetailDao.deleteMealDetailByMealId(id)
+
+    //    --------------------- SHARED PREFERENCES ------------------------
+
     fun setBudget(calorieBudget: Int) {
         val edit = sharedPreferences.edit()
         edit.putInt("calorie_budget", calorieBudget).apply()
@@ -242,6 +259,10 @@ class ProductViewModel(application: Application) : ViewModel() {
     private val _customMeals = MutableStateFlow<List<Meal>>(emptyList())
     val customMeals: StateFlow<List<Meal>>
         get() = _customMeals
+
+    private val _mealDetails = MutableStateFlow<List<MealDetail>>(emptyList())
+    val mealDetails: StateFlow<List<MealDetail>>
+        get() = _mealDetails
 
     private val _budget: MutableStateFlow<Int> = MutableStateFlow(0)
     val budget: StateFlow<Int>
@@ -286,14 +307,6 @@ class ProductViewModel(application: Application) : ViewModel() {
         }
     }
 
-    private fun fetchCustomMeals() {
-        viewModelScope.launch {
-            repository.getAllCustomMeals().collect { users ->
-                _customMeals.value = users
-            }
-        }
-    }
-
     fun getProductById(productId: Int): StateFlow<Product?> {
         val productFlow = MutableStateFlow<Product?>(null)
 
@@ -331,9 +344,18 @@ class ProductViewModel(application: Application) : ViewModel() {
     }
 
     // ---------------- Meal Functions ------------------
+
     fun addCustomMeal(name: String) {
         viewModelScope.launch {
             repository.addCustomMeal(Meal(0, name))
+        }
+    }
+
+    private fun fetchCustomMeals() {
+        viewModelScope.launch {
+            repository.getAllCustomMeals().collect { users ->
+                _customMeals.value = users
+            }
         }
     }
 
@@ -343,7 +365,24 @@ class ProductViewModel(application: Application) : ViewModel() {
         }
     }
 
+    // ---------------- Meal Detail Functions ------------------
+
+    fun getMealDetail(id: Int) {
+        viewModelScope.launch {
+            repository.getCustomMealDetails(id).collect { users ->
+                _mealDetails.value = users
+            }
+        }
+    }
+
+    fun addMealDetail(id: Int, name: String, amount: String) {
+        viewModelScope.launch {
+            repository.addMealDetails(id, name, amount)
+        }
+    }
+
     // ---------------- Retrofit fetch ------------------
+
     fun getNutrition(query: String): SharedFlow<NutritionResponse?> {
         val nutritionFlow = MutableSharedFlow<NutritionResponse?>()
 
