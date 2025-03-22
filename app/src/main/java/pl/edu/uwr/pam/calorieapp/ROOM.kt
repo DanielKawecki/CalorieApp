@@ -5,9 +5,13 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
+import androidx.room.Delete
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
@@ -35,6 +39,35 @@ data class Product(
     val fats: Double,
     val carbs: Double,
     val date: String
+)
+
+@Entity(tableName = "meals")
+data class Meal(
+    @PrimaryKey(autoGenerate = true) val idm: Int,
+    val name: String
+)
+
+@Entity(
+    tableName = "meal_details",
+    foreignKeys = [
+        ForeignKey(
+            entity = Meal::class,
+            parentColumns = ["idm"],
+            childColumns = ["m_id"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index(value = ["m_id"])]
+)
+data class MealDetail(
+    @PrimaryKey(autoGenerate = true) val idd: Int,
+    @ColumnInfo(name = "m_id") val mealId: Int,
+    val name: String,
+    val amount: String,
+    val calorie: Int,
+    val protein: Double,
+    val fats: Double,
+    val carbs: Double,
 )
 
 data class NutrientSet(
@@ -81,9 +114,35 @@ interface ProductDao {
     suspend fun deleteAll()
 }
 
-@Database(entities = [Product::class], version = 1, exportSchema = false)
+@Dao
+interface MealDao {
+    @Query("SELECT * FROM meals")
+    fun getAllMeals(): Flow<List<Meal>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMeal(meal: Meal): Long  // Returns inserted meal ID
+
+    @Query("DELETE FROM meals WHERE idm = :id")
+    suspend fun deleteMealById(id: Int)
+}
+
+@Dao
+interface MealDetailDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertMealDetail(mealDetail: MealDetail)
+
+    @Query("SELECT * FROM meal_details WHERE m_id = :mealId")
+    suspend fun getMealDetails(mealId: Int): List<MealDetail>
+
+    @Query("DELETE FROM meal_details WHERE m_id = :mealId")
+    suspend fun deleteMealDetailByMealId(mealId: Int)
+}
+
+@Database(entities = [Product::class, Meal::class, MealDetail::class], version = 1, exportSchema = false)
 abstract class ProductDatabase : RoomDatabase() {
     abstract fun productDao(): ProductDao
+    abstract fun mealDao(): MealDao
+    abstract fun mealDetailDao(): MealDetailDao
 
     companion object {
         @Volatile
@@ -99,7 +158,12 @@ abstract class ProductDatabase : RoomDatabase() {
     }
 }
 
-class ProductRepository(private val productDao: ProductDao, application: Application) {
+class ProductRepository(
+    private val productDao: ProductDao,
+    private val mealDao: MealDao,
+    private val mealDetailDao: MealDetailDao,
+    application: Application)
+{
     private val api = RetrofitInstance.api
     val sharedPreferences = application.getSharedPreferences("user_preferences", Context.MODE_PRIVATE)
 
@@ -107,9 +171,12 @@ class ProductRepository(private val productDao: ProductDao, application: Applica
     val budget: Int
         get() = _budget
 
+    //    --------------------- PRODUCT DAO ------------------------
+
     fun getAllProducts() = productDao.getAllProducts()
     fun getTodayProducts() = productDao.getTodayProducts()
     fun getProductById(productId: Int) = productDao.getProductById(productId)
+    fun getNutrientsSum() = productDao.getNutrientsSum()
 
     suspend fun updateProductById(productId: Int, name: String, amount: String) {
         val response = api.getNutrition("$amount of $name")
@@ -136,7 +203,11 @@ class ProductRepository(private val productDao: ProductDao, application: Applica
         productDao.insert(name, amount, meal, calorie.toInt(), protein, fats, carbs)
     }
 
-    fun getNutrientsSum() = productDao.getNutrientsSum()
+    //    --------------------- MEAL DAO ------------------------
+
+    fun getAllCustomMeals() = mealDao.getAllMeals()
+    suspend fun addCustomMeal(meal: Meal) = mealDao.insertMeal(meal)
+    suspend fun deleteCustomMealById(id: Int) = mealDao.deleteMealById(id)
 
     fun setBudget(calorieBudget: Int) {
         val edit = sharedPreferences.edit()
@@ -168,20 +239,27 @@ class ProductViewModel(application: Application) : ViewModel() {
     val nutrientsSum: StateFlow<NutrientSet>
         get() = _nutrientsSum
 
+    private val _customMeals = MutableStateFlow<List<Meal>>(emptyList())
+    val customMeals: StateFlow<List<Meal>>
+        get() = _customMeals
+
     private val _budget: MutableStateFlow<Int> = MutableStateFlow(0)
     val budget: StateFlow<Int>
         get() = _budget
 
     init {
         val db = ProductDatabase.getDatabase(application)
-        val dao = db.productDao()
-        repository = ProductRepository(dao, application)
+        val productDao = db.productDao()
+        val mealDao = db.mealDao()
+        val mealDetailDao = db.mealDetailDao()
+        repository = ProductRepository(productDao, mealDao, mealDetailDao, application)
 
         _budget.value = repository.budget
 
         fetchProducts()
         fetchTodayProducts()
         fetchNutrientsSum()
+        fetchCustomMeals()
     }
 
     private fun fetchProducts() {
@@ -204,6 +282,14 @@ class ProductViewModel(application: Application) : ViewModel() {
         viewModelScope.launch {
             repository.getNutrientsSum().collect { users ->
                 _nutrientsSum.value = users
+            }
+        }
+    }
+
+    private fun fetchCustomMeals() {
+        viewModelScope.launch {
+            repository.getAllCustomMeals().collect { users ->
+                _customMeals.value = users
             }
         }
     }
@@ -244,7 +330,20 @@ class ProductViewModel(application: Application) : ViewModel() {
         }
     }
 
-    // Retrofit fetch
+    // ---------------- Meal Functions ------------------
+    fun addCustomMeal(name: String) {
+        viewModelScope.launch {
+            repository.addCustomMeal(Meal(0, name))
+        }
+    }
+
+    fun deleteCustomMealById(id: Int) {
+        viewModelScope.launch {
+            repository.deleteCustomMealById(id)
+        }
+    }
+
+    // ---------------- Retrofit fetch ------------------
     fun getNutrition(query: String): SharedFlow<NutritionResponse?> {
         val nutritionFlow = MutableSharedFlow<NutritionResponse?>()
 
