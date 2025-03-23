@@ -62,7 +62,8 @@ fun BottomNavGraph(navController: NavHostController, padding: PaddingValues){
         startDestination = Screens.Home.route,
         modifier = Modifier.padding(padding)
     ) {
-        composable(route = Screens.Home.route) { MealsScreen(navController) } //{ HomeScreen(navController) }
+        composable(route = Screens.Home.route) { HomeScreen(navController) } //{ HomeScreen(navController) }
+        composable(route = Screens.Meals.route) { MealsScreen(navController) }
         composable(route = Screens.History.route) { RoomTestScreen() }
         composable(route = Screens.Add.route + "/{meal}") {
             val meal = it.arguments?.getString("meal")
@@ -84,7 +85,7 @@ fun BottomNavGraph(navController: NavHostController, padding: PaddingValues){
 @Composable
 fun BottomMenu(navController: NavHostController){
     val screens = listOf(
-        BottomBar.Home, BottomBar.History
+        BottomBar.Home,  BottomBar.Recipes, BottomBar.History
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()

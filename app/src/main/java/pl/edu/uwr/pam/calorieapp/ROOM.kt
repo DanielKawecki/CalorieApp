@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
@@ -76,6 +77,13 @@ data class NutrientSet(
     val fats: Double,
     val carbs: Double
 )
+
+//  ██████   █████   ██████
+//  ██   ██ ██   ██ ██    ██
+//  ██   ██ ███████ ██    ██
+//  ██   ██ ██   ██ ██    ██
+//  ██████  ██   ██  ██████
+//
 
 @Dao
 interface ProductDao {
@@ -158,6 +166,13 @@ abstract class ProductDatabase : RoomDatabase() {
     }
 }
 
+//  ██████  ███████ ██████   ██████  ███████ ██ ████████  ██████  ██████  ██    ██
+//  ██   ██ ██      ██   ██ ██    ██ ██      ██    ██    ██    ██ ██   ██  ██  ██
+//  ██████  █████   ██████  ██    ██ ███████ ██    ██    ██    ██ ██████    ████
+//  ██   ██ ██      ██      ██    ██      ██ ██    ██    ██    ██ ██   ██    ██
+//  ██   ██ ███████ ██       ██████  ███████ ██    ██     ██████  ██   ██    ██
+//
+
 class ProductRepository(
     private val productDao: ProductDao,
     private val mealDao: MealDao,
@@ -203,6 +218,10 @@ class ProductRepository(
         productDao.insert(name, amount, meal, calorie.toInt(), protein, fats, carbs)
     }
 
+    suspend fun addProduct(name: String, amount: String, meal: String, calorie: Int, protein: Double, fats: Double, carbs: Double) {
+        productDao.insert(name, amount, meal, calorie.toInt(), protein, fats, carbs)
+    }
+
     //    --------------------- MEAL DAO ------------------------
 
     fun getAllCustomMeals() = mealDao.getAllMeals()
@@ -239,6 +258,13 @@ class ProductViewModelFactory(val application: Application) :
         return ProductViewModel(application) as T
     }
 }
+
+//  ██    ██ ███    ███  ██████  ██████  ███████ ██
+//  ██    ██ ████  ████ ██    ██ ██   ██ ██      ██
+//  ██    ██ ██ ████ ██ ██    ██ ██   ██ █████   ██
+//   ██  ██  ██  ██  ██ ██    ██ ██   ██ ██      ██
+//    ████   ██      ██  ██████  ██████  ███████ ███████
+//
 
 class ProductViewModel(application: Application) : ViewModel() {
 
@@ -343,6 +369,12 @@ class ProductViewModel(application: Application) : ViewModel() {
         }
     }
 
+    fun addProduct(name: String, amount: String, meal: String, calorie: Int, protein: Double, fats: Double, carbs: Double) {
+        viewModelScope.launch {
+            repository.addProduct(name, amount, meal, calorie, protein, fats, carbs)
+        }
+    }
+
     // ---------------- Meal Functions ------------------
 
     fun addCustomMeal(name: String) {
@@ -384,6 +416,16 @@ class ProductViewModel(application: Application) : ViewModel() {
     fun deleteMealDetailById(id: Int) {
         viewModelScope.launch {
             repository.deleteMealDetailById(id)
+        }
+    }
+
+    fun addMealToProducts(id: Int, meal: String) {
+        viewModelScope.launch {
+            repository.getCustomMealDetails(id).collect { details ->
+                details.forEach { d ->
+                    repository.addProduct(d.name, d.amount, meal, d.calorie, d.protein, d.fats, d.carbs)
+                }
+            }
         }
     }
 
