@@ -134,8 +134,8 @@ interface MealDetailDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMealDetail(mealDetail: MealDetail)
 
-    @Query("DELETE FROM meal_details WHERE m_id = :mealId")
-    suspend fun deleteMealDetailByMealId(mealId: Int)
+    @Query("DELETE FROM meal_details WHERE idd = :id")
+    suspend fun deleteMealDetailId(id: Int)
 }
 
 @Database(entities = [Product::class, Meal::class, MealDetail::class], version = 1, exportSchema = false)
@@ -222,7 +222,7 @@ class ProductRepository(
         mealDetailDao.insertMealDetail(MealDetail(0, id, name, amount, calorie.toInt(), protein, fats, carbs))
     }
 
-    suspend fun deleteMealDetailByMealId(id: Int) = mealDetailDao.deleteMealDetailByMealId(id)
+    suspend fun deleteMealDetailById(id: Int) = mealDetailDao.deleteMealDetailId(id)
 
     //    --------------------- SHARED PREFERENCES ------------------------
 
@@ -378,6 +378,12 @@ class ProductViewModel(application: Application) : ViewModel() {
     fun addMealDetail(id: Int, name: String, amount: String) {
         viewModelScope.launch {
             repository.addMealDetails(id, name, amount)
+        }
+    }
+
+    fun deleteMealDetailById(id: Int) {
+        viewModelScope.launch {
+            repository.deleteMealDetailById(id)
         }
     }
 

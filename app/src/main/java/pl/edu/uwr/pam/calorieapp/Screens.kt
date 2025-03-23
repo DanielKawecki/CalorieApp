@@ -37,6 +37,8 @@ sealed class Screens(val route: String) {
     data object Add : Screens("add")
     data object Edit : Screens("edit")
     data object Options : Screens("options")
+    data object Meals : Screens("meals")
+    data object MealDetails : Screens("mealDetails")
 }
 
 sealed class BottomBar(
