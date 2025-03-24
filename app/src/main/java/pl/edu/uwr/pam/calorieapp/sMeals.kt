@@ -41,19 +41,9 @@ fun MealsScreen(navController: NavController) {
 
     Column () {
 
-        ScreenTitle("Custom Meals")
-
-        TextField(
-            value = mealName,
-            onValueChange = { mealName = it },
-            label = { Text("Meal Name") }
-        )
-
-        Button(
-            onClick = { viewModel.addCustomMeal(mealName) }
-        ) {
-            Text(text = "Add New Meal", fontSize = 20.sp)
-        }
+        ScreenTitle("Recipes")
+        CustomTextField("Recipe Name", mealName) { newText -> mealName = newText }
+        CustomButton("Add New Recipe") { viewModel.addCustomMeal(mealName) }
 
         LazyColumn {
             items(meals.size) { index ->
@@ -96,38 +86,30 @@ fun MealDetailsScreen(idm: String?, navController: NavController) {
 
         ScreenTitle("Meal Details")
 
-        TextField(
-            value = productName,
-            onValueChange = { productName = it },
-            label = { Text("Product Name") }
-        )
-
-        TextField(
-            value = productAmount,
-            onValueChange = { productAmount = it },
-            label = { Text("Product Amount") }
-        )
-
-        Button(
-            onClick = { viewModel.addMealDetail(mealID, productName, productAmount) }
-        ) {
-            Text("Add Detail")
-        }
+        CustomTextField("Product Name", productName) { newText -> productName = newText }
+        CustomTextField("Product Amount", productAmount) { newText -> productAmount = newText }
+        CustomButton("Add Product") { viewModel.addMealDetail(mealID, productName, productAmount) }
 
         LazyColumn {
             items(mealDetails.size) { index ->
-                Row {
-                    Text(
-                        modifier = Modifier.clickable {  },
-                        text = mealDetails[index].name,
-                        fontSize = 20.sp
-                    )
-                    Icon(
-                        modifier = Modifier.padding(horizontal = 15.dp).clickable { viewModel.deleteMealDetailById(mealDetails[index].idd) },
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = null
-                    )
-                }
+
+                DetailEntry(
+                    detail = mealDetails[index],
+                    onEdit = {},
+                    onDelete = { viewModel.deleteMealDetailById(mealDetails[index].idd) }
+                )
+//                Row {
+//                    Text(
+//                        modifier = Modifier.clickable {  },
+//                        text = mealDetails[index].name,
+//                        fontSize = 20.sp
+//                    )
+//                    Icon(
+//                        modifier = Modifier.padding(horizontal = 15.dp).clickable { viewModel.deleteMealDetailById(mealDetails[index].idd) },
+//                        imageVector = Icons.Default.Clear,
+//                        contentDescription = null
+//                    )
+//                }
             }
         }
     }

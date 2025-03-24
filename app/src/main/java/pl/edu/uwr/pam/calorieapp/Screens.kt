@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.Button
@@ -48,6 +49,6 @@ sealed class BottomBar(
     val icon: ImageVector
 ) {
     data object Home : BottomBar(Screens.Home.route, "Home", Icons.Default.Home)
-    data object Recipes : BottomBar(Screens.Meals.route, "Recipes", Icons.Default.Favorite)
+    data object Recipes : BottomBar(Screens.Meals.route, "Recipes", Icons.Default.Edit)
     data object History : BottomBar(Screens.History.route, "Summary", Icons.Default.DateRange)
 }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
@@ -23,13 +24,16 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,6 +48,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -70,65 +75,97 @@ fun ScreenTitle(title: String) {
 @Composable
 fun CustomButton(content: String , function: () -> Unit) {
 
-    Button(
+//    OutlinedButton(
+//        onClick = { function() },
+//        colors = ButtonDefaults.buttonColors(
+//            contentColor = Color.Black,
+//            containerColor = Color.Transparent,
+//            ),
+//        shape = RoundedCornerShape(5.dp)
+//    ) {
+//        Text("Add")
+//    }
+
+    OutlinedButton(
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth()
-            .shadow(
-                elevation = 3.dp,
-                shape = RoundedCornerShape(8.dp)
-            )
-            .background(Color.White)
-            .size(60.dp)
-            .background(Color.White, shape = RoundedCornerShape(5.dp)),
+//            .shadow(
+//                elevation = 3.dp,
+//                shape = RoundedCornerShape(8.dp)
+//            )
+//            .background(Color.White)
+            .size(60.dp),
+//            .background(Color.White, shape = RoundedCornerShape(5.dp)),
         onClick = { function() },
         colors = ButtonColors(
-            contentColor = Color.DarkGray,
+            contentColor = Color.Black,
             containerColor = Color.Transparent,
             disabledContainerColor = Color.Red,
             disabledContentColor = Color.Red,
-        )
+        ),
+        shape = RoundedCornerShape(5.dp)
     ) {
         Text(
             text = content,
-            fontSize = 18.sp
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Normal
         )
     }
 }
 
+@Preview(showBackground = true)
 @Composable
-fun CustomTextField(
-    label: String,
-    content: String,
-    onValueChange: (String) -> Unit
-) {
-    TextField(
+fun CustomButtonPreview() {
+    CustomButton("Button") { }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CustomTextField(label: String, content: String, onValueChange: (String) -> Unit) {
+
+    OutlinedTextField(
         modifier = Modifier
-            .padding(4.dp)
-            .fillMaxWidth()
-            .shadow(
-                elevation = 3.dp,
-                shape = RoundedCornerShape(8.dp)
-            )
-            .background(Color.White)
-            .size(60.dp)
-            .background(Color.White, shape = RoundedCornerShape(5.dp)),
+            .padding(4.dp),
+//            .fillMaxWidth(),
         value = content,
-        onValueChange = onValueChange,
         label = { Text(label) },
-        colors = TextFieldDefaults.colors(
-            focusedTextColor = Color.DarkGray,
-            unfocusedTextColor = Color.DarkGray,
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White,
+        onValueChange = onValueChange,
+        textStyle = TextStyle(fontSize = 20.sp, color = Color.DarkGray),
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            focusedBorderColor = Color.DarkGray,
             focusedLabelColor = Color.DarkGray,
-            unfocusedLabelColor = Color.DarkGray,
-            focusedIndicatorColor = Color.Transparent,
-            unfocusedIndicatorColor = Color.Transparent,
+            cursorColor = Color.DarkGray
+        )
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CustomNumberField(label: String, content: String, onValueChange: (String) -> Unit) {
+
+    OutlinedTextField(
+        modifier = Modifier
+            .padding(4.dp),
+//            .fillMaxWidth(),
+        value = content,
+        label = { Text(label) },
+        onValueChange = onValueChange,
+        textStyle = TextStyle(fontSize = 20.sp, color = Color.DarkGray),
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            focusedBorderColor = Color.DarkGray,
+            focusedLabelColor = Color.DarkGray,
             cursorColor = Color.DarkGray
         ),
-        textStyle = TextStyle(fontSize = 20.sp)
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
     )
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TextFieldPreview() {
+    CustomTextField(label = "Label", content = "This is a content", onValueChange = { })
 }
 
 @Composable
@@ -237,6 +274,61 @@ fun ProductEntry(product: Product, onDelete: () -> Unit, onEdit: () -> Unit) {
                 fontSize = 14.sp,
                 color = Color.Gray
             )
+        }
+    }
+}
+
+@Composable
+fun DetailEntry(detail: MealDetail, onDelete: () -> Unit, onEdit: () -> Unit) {
+
+    Column (
+        modifier = Modifier
+            .padding(top = 5.dp)
+            .background(Color(240, 240, 240))
+            .clickable { onEdit() }
+    ) {
+        Row (
+            modifier = Modifier.padding(top = 10.dp)
+        ) {
+            Text(
+                modifier = Modifier
+                    .padding(start = 15.dp)
+                    .weight(1.0f),
+                text = detail.name,
+                fontSize = 18.sp,
+            )
+            Icon(
+                modifier = Modifier.padding(end = 15.dp).clickable { onDelete() },
+                imageVector = Icons.Default.Clear,
+                contentDescription = null
+            )
+        }
+
+        Row () {
+            Text(
+                modifier = Modifier.padding(start = 15.dp, bottom = 10.dp),
+                text = detail.amount,
+                fontSize = 14.sp,
+                color = Color.Gray
+            )
+//            Text(
+//                modifier = Modifier.padding(start = 30.dp, bottom = 10.dp),
+//                text = "${detail.calorie} kcal",
+//                fontSize = 14.sp,
+//                color = Color.Gray
+//            )
+//            Text(
+//                modifier = Modifier.padding(start = 30.dp, bottom = 10.dp),
+//                text = "${detail.fats} g",
+//                fontSize = 14.sp,
+//                color = Color.Gray
+//            )
+//            Text(
+//                modifier = Modifier.padding(start = 30.dp, bottom = 10.dp),
+//                text = "${detail.carbs} g",
+//                fontSize = 14.sp,
+//                color = Color.Gray
+//            )
         }
     }
 }
