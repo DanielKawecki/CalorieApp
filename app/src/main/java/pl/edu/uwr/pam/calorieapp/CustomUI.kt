@@ -24,7 +24,10 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -39,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -127,8 +131,8 @@ fun CustomTextField(label: String, content: String, onValueChange: (String) -> U
 
     OutlinedTextField(
         modifier = Modifier
-            .padding(4.dp),
-//            .fillMaxWidth(),
+            .padding(4.dp)
+            .fillMaxWidth(),
         value = content,
         label = { Text(label) },
         onValueChange = onValueChange,
@@ -378,6 +382,40 @@ fun MealSection(title: String, products: List<Product>, viewModel: ProductViewMo
                     println("Before navController: ${product.id}, ${product.name}, ${product.amount}")
                     navController.navigate(Screens.Edit.route + "/${product.id}/${product.name}/${product.amount}") }
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UnitDropdownList(units: List<String>, selected: String, onValueChange: (String) -> Unit) {
+
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        modifier = Modifier
+            .padding(4.dp),
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        TextField(
+            modifier = Modifier.menuAnchor(),
+            value = selected,
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = !expanded }) {
+            units.forEach { text ->
+                DropdownMenuItem(
+                    text = { Text(text = text) },
+                    onClick = {
+                        onValueChange(text)
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
+            }
         }
     }
 }

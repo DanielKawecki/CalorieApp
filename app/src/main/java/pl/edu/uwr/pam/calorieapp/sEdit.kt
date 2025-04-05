@@ -2,6 +2,7 @@ package pl.edu.uwr.pam.calorieapp
 
 import android.app.Application
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -25,8 +26,12 @@ fun EditScreen(idArg: String?, nameArg: String?, amountArg: String?, navControll
         ProductViewModelFactory(LocalContext.current.applicationContext as Application)
     )
 
+    val amountNumber = amountArg!!.filter { it.isDigit() }
+    val amountUnit = amountArg.filter { !it.isDigit() }
+
     var productName by rememberSaveable { mutableStateOf(nameArg!!) }
-    var amount by rememberSaveable { mutableStateOf(amountArg!!) }
+    var amount by rememberSaveable { mutableStateOf(amountNumber) }
+    var unit by rememberSaveable { mutableStateOf(amountUnit) }
 
     Column {
 
@@ -38,16 +43,15 @@ fun EditScreen(idArg: String?, nameArg: String?, amountArg: String?, navControll
             label = { Text("Name") }
         )
 
-        TextField(
-            value = amount,
-            onValueChange = { amount = it },
-            label = { Text("Amount") }
-        )
+        Row() {
+            CustomNumberField("Amount of Product", amount) { newText -> amount = newText }
+            UnitDropdownList(listOf("g", "ml", "piece"), unit) { selected -> unit = selected }
+        }
 
         Button(
             onClick = {
                 println("Works: $idArg, $productName, $amount")
-                viewModel.updateProductById(idArg!!.toInt(), productName, amount)
+                viewModel.updateProductById(idArg!!.toInt(), productName, amount + unit)
                 navController.navigate(Screens.Home.route)
             }
         ) {

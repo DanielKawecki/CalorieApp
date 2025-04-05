@@ -45,12 +45,9 @@ fun AddScreen(meal: String?, navController: NavHostController) {
     )
     val meals by viewModel.customMeals.collectAsStateWithLifecycle()
 
-    val quantities = listOf("g", "ml", "piece")
-
     var productName by rememberSaveable { mutableStateOf("") }
     var amount by rememberSaveable { mutableStateOf("") }
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    var selected by rememberSaveable { mutableStateOf(quantities[0]) }
+    var unit by rememberSaveable { mutableStateOf("g") }
 
     Column {
 
@@ -88,37 +85,11 @@ fun AddScreen(meal: String?, navController: NavHostController) {
 
         Row() {
             CustomNumberField("Amount of Product", amount) { newText -> amount = newText }
-
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
-                TextField(
-                    modifier = Modifier.menuAnchor(),
-                    value = selected,
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
-                )
-                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = !expanded }) {
-                    quantities.forEach { text ->
-                        DropdownMenuItem(
-                            text = { Text(text = text) },
-                            onClick = {
-                                selected = text
-                                expanded = false
-                            },
-                            contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                        )
-                    }
-                }
-            }
+            UnitDropdownList(listOf("g", "ml", "piece"), "g") { selected -> unit = selected }
         }
 
-        Text(text = selected, fontSize = 20.sp)
-
         CustomButton("Add Product") {
-            if (meal != null) viewModel.addWithNutrition(productName, amount, meal)
+            if (meal != null) viewModel.addWithNutrition(productName, amount + unit, meal)
             navController.navigate(Screens.Home.route)
         }
     }
@@ -126,11 +97,6 @@ fun AddScreen(meal: String?, navController: NavHostController) {
 
 @Composable
 fun ListOfMeals(meals: List<Meal>) {
-//    val meals = listOf(
-//        Meal(0, "Oatmeal"),
-//        Meal(1, "Beefcake"),
-//        Meal(2, "Spaghetti")
-//    )
 
     LazyColumn {
         items(meals.size) { index ->

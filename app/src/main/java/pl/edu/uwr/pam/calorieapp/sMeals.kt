@@ -1,9 +1,11 @@
 package pl.edu.uwr.pam.calorieapp
 
 import android.app.Application
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -18,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,7 +42,7 @@ fun MealsScreen(navController: NavController) {
     var mealName by rememberSaveable { mutableStateOf("") }
 
 
-    Column () {
+    Column {
 
         ScreenTitle("Recipes")
         CustomTextField("Recipe Name", mealName) { newText -> mealName = newText }
@@ -47,19 +50,31 @@ fun MealsScreen(navController: NavController) {
 
         LazyColumn {
             items(meals.size) { index ->
-                Row {
-                    Text(
-                        modifier = Modifier.clickable {
-                            navController.navigate(Screens.MealDetails.route + "/${meals[index].idm}")
-                        },
-                        text = meals[index].name,
-                        fontSize = 20.sp
-                    )
-                    Icon(
-                        modifier = Modifier.padding(horizontal = 15.dp).clickable { viewModel.deleteCustomMealById(meals[index].idm) },
-                        imageVector = Icons.Default.Clear,
-                        contentDescription = null
-                    )
+
+                Column(
+                    modifier = Modifier
+                        .padding(top = 5.dp)
+                        .background(Color(240, 240, 240))
+                        .height(60.dp)
+                        .clickable { navController.navigate(Screens.MealDetails.route + "/${meals[index].idm}") }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(top = 10.dp)
+                    ) {
+                        Text(
+                            modifier = Modifier
+                                .padding(start = 15.dp)
+                                .weight(1.0f),
+                            text = meals[index].name,
+                            fontSize = 18.sp,
+                        )
+                        Icon(
+                            modifier = Modifier.padding(end = 15.dp)
+                                .clickable { viewModel.deleteCustomMealById(meals[index].idm) },
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = null
+                        )
+                    }
                 }
             }
         }
@@ -81,14 +96,26 @@ fun MealDetailsScreen(idm: String?, navController: NavController) {
 
     var productName by rememberSaveable { mutableStateOf("") }
     var productAmount by rememberSaveable { mutableStateOf("") }
+    var unit by rememberSaveable { mutableStateOf("g") }
 
     Column {
 
         ScreenTitle("Meal Details")
 
         CustomTextField("Product Name", productName) { newText -> productName = newText }
-        CustomTextField("Product Amount", productAmount) { newText -> productAmount = newText }
-        CustomButton("Add Product") { viewModel.addMealDetail(mealID, productName, productAmount) }
+        Row() {
+            CustomNumberField("Amount of Product", productAmount) { newText ->
+                productAmount = newText
+            }
+            UnitDropdownList(listOf("g", "ml", "piece"), unit) { selected -> unit = selected }
+        }
+        CustomButton("Add Product") {
+            viewModel.addMealDetail(
+                mealID,
+                productName,
+                productAmount + unit
+            )
+        }
 
         LazyColumn {
             items(mealDetails.size) { index ->
@@ -98,18 +125,6 @@ fun MealDetailsScreen(idm: String?, navController: NavController) {
                     onEdit = {},
                     onDelete = { viewModel.deleteMealDetailById(mealDetails[index].idd) }
                 )
-//                Row {
-//                    Text(
-//                        modifier = Modifier.clickable {  },
-//                        text = mealDetails[index].name,
-//                        fontSize = 20.sp
-//                    )
-//                    Icon(
-//                        modifier = Modifier.padding(horizontal = 15.dp).clickable { viewModel.deleteMealDetailById(mealDetails[index].idd) },
-//                        imageVector = Icons.Default.Clear,
-//                        contentDescription = null
-//                    )
-//                }
             }
         }
     }
