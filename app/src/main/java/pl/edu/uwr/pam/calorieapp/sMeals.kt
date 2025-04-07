@@ -15,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -40,13 +41,16 @@ fun MealsScreen(navController: NavController) {
     val meals by viewModel.customMeals.collectAsStateWithLifecycle()
 
     var mealName by rememberSaveable { mutableStateOf("") }
-
+//    var mealDetailCount by rememberSaveable { mutableStateOf("Loading...") }
 
     Column {
 
         ScreenTitle("Recipes")
         CustomTextField("Recipe Name", mealName) { newText -> mealName = newText }
-        CustomButton("Add New Recipe") { viewModel.addCustomMeal(mealName) }
+        CustomButton("Add New Recipe") {
+            viewModel.addCustomMeal(mealName)
+            mealName = ""
+        }
 
         LazyColumn {
             items(meals.size) { index ->
@@ -68,6 +72,14 @@ fun MealsScreen(navController: NavController) {
                             text = meals[index].name,
                             fontSize = 18.sp,
                         )
+//                        Text(
+//                            modifier = Modifier
+//                                .padding(start = 15.dp)
+//                                .weight(1.0f),
+//                            text = mealDetailCount,
+//                            fontSize = 18.sp,
+//                        )
+
                         Icon(
                             modifier = Modifier.padding(end = 15.dp)
                                 .clickable { viewModel.deleteCustomMealById(meals[index].idm) },
@@ -115,6 +127,9 @@ fun MealDetailsScreen(idm: String?, navController: NavController) {
                 productName,
                 productAmount + unit
             )
+            productName = ""
+            productAmount = ""
+            unit = "g"
         }
 
         LazyColumn {

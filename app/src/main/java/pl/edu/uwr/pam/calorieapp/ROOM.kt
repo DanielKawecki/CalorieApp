@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.sql.Date
 
@@ -124,7 +126,7 @@ interface ProductDao {
 
 @Dao
 interface MealDao {
-    @Query("SELECT * FROM meals")
+    @Query("SELECT * FROM meals ORDER BY name")
     fun getAllMeals(): Flow<List<Meal>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -138,6 +140,9 @@ interface MealDao {
 interface MealDetailDao {
     @Query("SELECT * FROM meal_details WHERE m_id = :mealId")
     fun getMealDetails(mealId: Int): Flow<List<MealDetail>>
+
+    @Query("SELECT COUNT(*) FROM meal_details WHERE m_id = :mealId")
+    suspend fun getDetailCount(mealId: Int): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMealDetail(mealDetail: MealDetail)
@@ -219,7 +224,7 @@ class ProductRepository(
     }
 
     suspend fun addProduct(name: String, amount: String, meal: String, calorie: Int, protein: Double, fats: Double, carbs: Double) {
-        productDao.insert(name, amount, meal, calorie.toInt(), protein, fats, carbs)
+        productDao.insert(name, amount, meal, calorie, protein, fats, carbs)
     }
 
     //    --------------------- MEAL DAO ------------------------
@@ -231,6 +236,8 @@ class ProductRepository(
     //    --------------------- MEAL DETAIL DAO ------------------------
 
     fun getCustomMealDetails(id: Int) = mealDetailDao.getMealDetails(id)
+
+    suspend fun getDetailCount(id: Int) = mealDetailDao.getDetailCount(id)
 
     suspend fun addMealDetails(id: Int,  name: String, amount: String) {
         val response = api.getNutrition("$amount of $name")
@@ -407,6 +414,10 @@ class ProductViewModel(application: Application) : ViewModel() {
         }
     }
 
+    suspend fun getDetailCount(id: Int): Int {
+        return repository.getDetailCount(id)
+    }
+
     fun addMealDetail(id: Int, name: String, amount: String) {
         viewModelScope.launch {
             repository.addMealDetails(id, name, amount)
@@ -421,10 +432,9 @@ class ProductViewModel(application: Application) : ViewModel() {
 
     fun addMealToProducts(id: Int, meal: String) {
         viewModelScope.launch {
-            repository.getCustomMealDetails(id).collect { details ->
-                details.forEach { d ->
-                    repository.addProduct(d.name, d.amount, meal, d.calorie, d.protein, d.fats, d.carbs)
-                }
+            val details = repository.getCustomMealDetails(id).first()
+            details.forEach { d ->
+                repository.addProduct(d.name, d.amount, meal, d.calorie, d.protein, d.fats, d.carbs)
             }
         }
     }
