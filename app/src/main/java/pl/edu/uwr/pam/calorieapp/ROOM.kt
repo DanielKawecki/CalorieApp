@@ -30,6 +30,8 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.sql.Date
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 @Entity(tableName = "products")
 data class Product(
@@ -128,6 +130,9 @@ interface ProductDao {
 interface MealDao {
     @Query("SELECT * FROM meals ORDER BY name")
     fun getAllMeals(): Flow<List<Meal>>
+
+    @Query("SELECT name FROM meals WHERE idm=:id")
+    suspend fun getMealNameByID(id: Int): String
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMeal(meal: Meal): Long  // Returns inserted meal ID
@@ -230,6 +235,7 @@ class ProductRepository(
     //    --------------------- MEAL DAO ------------------------
 
     fun getAllCustomMeals() = mealDao.getAllMeals()
+    suspend fun getMealNameByID(id: Int) = mealDao.getMealNameByID(id)
     suspend fun addCustomMeal(meal: Meal) = mealDao.insertMeal(meal)
     suspend fun deleteCustomMealById(id: Int) = mealDao.deleteMealById(id)
 
@@ -431,6 +437,23 @@ class ProductViewModel(application: Application) : ViewModel() {
     }
 
     fun addMealToProducts(id: Int, meal: String) {
+//        viewModelScope.launch {
+//            val details = repository.getCustomMealDetails(id).first()
+//
+//            if (details.isNotEmpty()) {
+//                val totalCalories = details.sumOf { it.calorie }
+//                val totalProtein = details.sumOf { it.protein }.round1()
+//                val totalFats = details.sumOf { it.fats }.round1()
+//                val totalCarbs = details.sumOf { it.carbs }.round1()
+//                val totalAmount = details.sumOf { it.amount.filter { !it.isDigit() } }
+//                val name = repository.getMealNameByID(id)
+//
+//                repository.addProduct(name, "g", meal, totalCalories, totalProtein, totalFats, totalCarbs)
+//            }
+//            details.forEach { d ->
+//                repository.addProduct(d.name, "change this", meal, d.calorie, d.protein, d.fats, d.carbs)
+//            }
+//        }
         viewModelScope.launch {
             val details = repository.getCustomMealDetails(id).first()
             details.forEach { d ->
