@@ -35,30 +35,36 @@ fun EditScreen(idArg: String?, nameArg: String?, amountArg: String?, navControll
 
     Column {
 
-        Text(text = "Edit", fontSize = 20.sp)
+//        Text(text = "Edit", fontSize = 20.sp)
+        ScreenTitle("Edit")
 
-        TextField(
-            value = productName,
-            onValueChange = { productName = it },
-            label = { Text("Name") }
-        )
+        CustomTextField("Name", productName) { newVal -> productName = newVal }
+//        TextField(
+//            value = productName,
+//            onValueChange = { productName = it },
+//            label = { Text("Name") }
+//        )
 
         Row() {
             CustomNumberField("Amount of Product", amount) { newText -> amount = newText }
-            UnitDropdownList(listOf("g", "ml", "piece"), unit) { selected -> unit = selected }
+            UnitDropdownList(listOf("g", "ml"), unit) { selected -> unit = selected }
         }
 
-        Button(
-            onClick = {
-                println("Works: $idArg, $productName, $amount")
-                viewModel.updateProductById(idArg!!.toInt(), productName, amount + unit)
-                navController.navigate(Screens.Home.route)
-            }
-        ) {
-            Text(
-                fontSize = 20.sp,
-                text = "Update"
-            )
+        CustomButton("Update") {
+            viewModel.updateProductById(idArg!!.toInt(), productName, amount + unit)
+            navController.navigate(Screens.Home.route)
         }
+//        Button(
+//            onClick = {
+//                println("Works: $idArg, $productName, $amount")
+//                viewModel.updateProductById(idArg!!.toInt(), productName, amount + unit)
+//                navController.navigate(Screens.Home.route)
+//            }
+//        ) {
+//            Text(
+//                fontSize = 20.sp,
+//                text = "Update"
+//            )
+//        }
     }
 }

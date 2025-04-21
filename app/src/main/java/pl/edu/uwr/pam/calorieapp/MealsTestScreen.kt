@@ -1,93 +1,77 @@
-package pl.edu.uwr.pam.calorieapp
-
-import android.app.Application
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
-
-@Composable
-fun MealsTestScreen() {
-
-    val viewModel: ProductViewModel = viewModel(
-        LocalViewModelStoreOwner.current!!,
-        "ProductViewModel",
-        ProductViewModelFactory(LocalContext.current.applicationContext as Application)
-    )
-    val meals by viewModel.customMeals.collectAsStateWithLifecycle()
-    val mealDetails by viewModel.mealDetails.collectAsStateWithLifecycle()
-
-    var mealName by rememberSaveable { mutableStateOf("") }
-    var productName by rememberSaveable { mutableStateOf("") }
-    var productAmount by rememberSaveable { mutableStateOf("") }
-    var mealId by rememberSaveable { mutableStateOf("") }
-
-    Column () {
-
-        Text(text = "All Custom Meals:", fontSize = 20.sp)
-
-        TextField(
-            value = mealName,
-            onValueChange = { mealName = it },
-            label = { Text("Meal Name") }
-        )
-
-        TextField(
-            value = productName,
-            onValueChange = { productName = it },
-            label = { Text("Product Name") }
-        )
-
-        TextField(
-            value = productAmount,
-            onValueChange = { productAmount = it },
-            label = { Text("Product Amount") }
-        )
-
-        TextField(
-            value = mealId,
-            onValueChange = { mealId = it },
-            label = { Text("Meal Id") }
-        )
-
-        Button(
-            onClick = { viewModel.addCustomMeal(mealName) }
-        ) {
-            Text("Add Meal")
-        }
-
-        Button(
-            onClick = { viewModel.addMealDetail(mealId.toInt(), productName, productAmount) }
-        ) {
-            Text("Add Meal Product")
-        }
-
-        for (meal in meals) {
-            Text(
-                modifier = Modifier.clickable { viewModel.getMealDetail(meal.idm) },
-                text = "${meal.idm} ${meal.name}",
-                fontSize = 20.sp)
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        for (detail in mealDetails) {
-            Text(text = "${detail.name} ${detail.calorie}", fontSize = 14.sp)
-        }
-    }
-}
+//package pl.edu.uwr.pam.calorieapp
+//
+//import androidx.compose.material3.MaterialTheme
+//import androidx.compose.runtime.Composable
+//import androidx.compose.runtime.LaunchedEffect
+//import androidx.compose.runtime.remember
+//import androidx.compose.ui.tooling.preview.Preview
+//import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+//import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
+//import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
+//import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
+//import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+//import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
+//import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
+//import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
+//import com.patrykandpatrick.vico.core.cartesian.data.columnSeries
+//
+//data class Point(val x: Float, val y: Float)
+//
+//fun calculateTrendLine(points: List<Point>): List<Point> {
+//    val n = points.size
+//    val sumX = points.sumOf { it.x.toDouble() }
+//    val sumY = points.sumOf { it.y.toDouble() }
+//    val sumXY = points.sumOf { it.x * it.y.toDouble() }
+//    val sumX2 = points.sumOf { it.x * it.x.toDouble() }
+//
+//    val slope = ((n * sumXY) - (sumX * sumY)) / ((n * sumX2) - (sumX * sumX))
+//    val intercept = (sumY - slope * sumX) / n
+//
+//    val xMin = points.minOf { it.x }
+//    val xMax = points.maxOf { it.x }
+//
+//    return listOf(
+//        Point(xMin, (slope * xMin + intercept).toFloat()),
+//        Point(xMax, (slope * xMax + intercept).toFloat())
+//    )
+//}
+//
+//@Composable
+//fun MealsTestScreen() {
+//
+////    val viewModel: ProductViewModel = viewModel(
+////        LocalViewModelStoreOwner.current!!,
+////        "ProductViewModel",
+////        ProductViewModelFactory(LocalContext.current.applicationContext as Application)
+////    )
+////    val meals by viewModel.customMeals.collectAsStateWithLifecycle()
+////    val mealDetails by viewModel.mealDetails.collectAsStateWithLifecycle()
+////
+////    var mealName by rememberSaveable { mutableStateOf("") }
+////    var productName by rememberSaveable { mutableStateOf("") }
+////    var productAmount by rememberSaveable { mutableStateOf("") }
+////    var mealId by rememberSaveable { mutableStateOf("") }
+//
+//    val modelProducer = remember { CartesianChartModelProducer() }
+//    LaunchedEffect(Unit) {
+//        modelProducer.runTransaction {
+//            columnSeries { series(5, 6, 5, 2, 11, 8, 5, 2, 15, 11, 8, 13, 12, 10, 2, 7) }
+//        }
+//    }
+//    CartesianChartHost(
+//        rememberCartesianChart(
+//            rememberColumnCartesianLayer(),
+//            startAxis = VerticalAxis.rememberStart(),
+//            bottomAxis = HorizontalAxis.rememberBottom(),
+//        ),
+//        modelProducer,
+//    )
+//}
+//
+//@Preview
+//@Composable
+//fun MealsTestScreenPreview() {
+//    MaterialTheme {
+//        MealsTestScreen()
+//    }
+//}

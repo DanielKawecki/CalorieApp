@@ -82,6 +82,13 @@ data class NutrientSet(
     val carbs: Double
 )
 
+@Entity(tableName = "mass")
+data class Mass(
+    @PrimaryKey(autoGenerate = true) val id: Int,
+    val value: Double,
+    val date: String
+)
+
 //  ██████   █████   ██████
 //  ██   ██ ██   ██ ██    ██
 //  ██   ██ ███████ ██    ██
@@ -131,6 +138,9 @@ interface MealDao {
     @Query("SELECT * FROM meals ORDER BY name")
     fun getAllMeals(): Flow<List<Meal>>
 
+    @Query("UPDATE meals SET name=:name WHERE idm=:id")
+    suspend fun updateMealByID(id: Int, name: String)
+
     @Query("SELECT name FROM meals WHERE idm=:id")
     suspend fun getMealNameByID(id: Int): String
 
@@ -156,11 +166,27 @@ interface MealDetailDao {
     suspend fun deleteMealDetailId(id: Int)
 }
 
-@Database(entities = [Product::class, Meal::class, MealDetail::class], version = 1, exportSchema = false)
+@Dao
+interface MassDao {
+    @Query("SELECT * FROM mass ORDER BY date ASC")
+    fun getAllMasses(): Flow<List<Mass>>
+
+    @Query("INSERT INTO mass (value, date) VALUES (:value, CURRENT_TIMESTAMP)")
+    suspend fun insert(value: Double)
+
+    @Query("UPDATE mass SET value=:value WHERE id = :id")
+    suspend fun updateMassById(id: Int, value: Double)
+
+    @Query("DELETE FROM mass WHERE id = :id")
+    suspend fun deleteMassById(id: Int)
+}
+
+@Database(entities = [Product::class, Meal::class, MealDetail::class, Mass::class], version = 1, exportSchema = false)
 abstract class ProductDatabase : RoomDatabase() {
     abstract fun productDao(): ProductDao
     abstract fun mealDao(): MealDao
     abstract fun mealDetailDao(): MealDetailDao
+    abstract fun massDao(): MassDao
 
     companion object {
         @Volatile
@@ -187,6 +213,7 @@ class ProductRepository(
     private val productDao: ProductDao,
     private val mealDao: MealDao,
     private val mealDetailDao: MealDetailDao,
+    private val massDao: MassDao,
     application: Application)
 {
     private val api = RetrofitInstance.api
@@ -235,6 +262,7 @@ class ProductRepository(
     //    --------------------- MEAL DAO ------------------------
 
     fun getAllCustomMeals() = mealDao.getAllMeals()
+    suspend fun updateMealNameByID(id: Int, name: String) = mealDao.updateMealByID(id, name)
     suspend fun getMealNameByID(id: Int) = mealDao.getMealNameByID(id)
     suspend fun addCustomMeal(meal: Meal) = mealDao.insertMeal(meal)
     suspend fun deleteCustomMealById(id: Int) = mealDao.deleteMealById(id)
@@ -255,6 +283,13 @@ class ProductRepository(
     }
 
     suspend fun deleteMealDetailById(id: Int) = mealDetailDao.deleteMealDetailId(id)
+
+    //    --------------------- MASS DAO ------------------------
+
+    fun getAllMasses() = massDao.getAllMasses()
+    suspend fun addMass(value: Double) = massDao.insert(value)
+    suspend fun updateMassById(id: Int, value: Double) = massDao.updateMassById(id, value)
+    suspend fun deleteMassById(id: Int) = massDao.deleteMassById(id)
 
     //    --------------------- SHARED PREFERENCES ------------------------
 
@@ -307,12 +342,17 @@ class ProductViewModel(application: Application) : ViewModel() {
     val budget: StateFlow<Int>
         get() = _budget
 
+    private val _masses = MutableStateFlow<List<Mass>>(emptyList())
+    val massesState: StateFlow<List<Mass>>
+        get() = _masses
+
     init {
         val db = ProductDatabase.getDatabase(application)
         val productDao = db.productDao()
         val mealDao = db.mealDao()
         val mealDetailDao = db.mealDetailDao()
-        repository = ProductRepository(productDao, mealDao, mealDetailDao, application)
+        val massDao = db.massDao()
+        repository = ProductRepository(productDao, mealDao, mealDetailDao, massDao, application)
 
         _budget.value = repository.budget
 
@@ -320,6 +360,7 @@ class ProductViewModel(application: Application) : ViewModel() {
         fetchTodayProducts()
         fetchNutrientsSum()
         fetchCustomMeals()
+        fetchMasses()
     }
 
     private fun fetchProducts() {
@@ -396,6 +437,12 @@ class ProductViewModel(application: Application) : ViewModel() {
         }
     }
 
+    fun updateMealByID(id: Int, name: String) {
+        viewModelScope.launch {
+            repository.updateMealNameByID(id, name)
+        }
+    }
+
     private fun fetchCustomMeals() {
         viewModelScope.launch {
             repository.getAllCustomMeals().collect { users ->
@@ -459,6 +506,34 @@ class ProductViewModel(application: Application) : ViewModel() {
             details.forEach { d ->
                 repository.addProduct(d.name, d.amount, meal, d.calorie, d.protein, d.fats, d.carbs)
             }
+        }
+    }
+
+    // ---------------- Mass Functions ------------------
+
+    private fun fetchMasses() {
+        viewModelScope.launch {
+            repository.getAllMasses().collect { mass ->
+                _masses.value = mass
+            }
+        }
+    }
+
+    fun addMass(value: Double) {
+        viewModelScope.launch {
+            repository.addMass(value)
+        }
+    }
+
+    fun updateMassById(id: Int, value: Double) {
+        viewModelScope.launch {
+            repository.updateMassById(id, value)
+        }
+    }
+
+    fun deleteMassById(id: Int) {
+        viewModelScope.launch {
+            repository.deleteMassById(id)
         }
     }
 

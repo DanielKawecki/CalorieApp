@@ -60,7 +60,7 @@ fun MealsScreen(navController: NavController) {
                         .padding(top = 5.dp)
                         .background(Color(240, 240, 240))
                         .height(60.dp)
-                        .clickable { navController.navigate(Screens.MealDetails.route + "/${meals[index].idm}") }
+                        .clickable { navController.navigate(Screens.MealDetails.route + "/${meals[index].idm}/${meals[index].name}") }
                 ) {
                     Row(
                         modifier = Modifier.padding(top = 10.dp)
@@ -94,7 +94,7 @@ fun MealsScreen(navController: NavController) {
 }
 
 @Composable
-fun MealDetailsScreen(idm: String?, navController: NavController) {
+fun MealDetailsScreen(idm: String?, mealArg: String?, navController: NavController) {
 
     val mealID = idm!!.toInt()
 
@@ -106,6 +106,7 @@ fun MealDetailsScreen(idm: String?, navController: NavController) {
     val mealDetails by viewModel.mealDetails.collectAsStateWithLifecycle()
     viewModel.getMealDetail(mealID)
 
+    var mealName by rememberSaveable { mutableStateOf(mealArg!!) }
     var productName by rememberSaveable { mutableStateOf("") }
     var productAmount by rememberSaveable { mutableStateOf("") }
     var unit by rememberSaveable { mutableStateOf("g") }
@@ -114,12 +115,17 @@ fun MealDetailsScreen(idm: String?, navController: NavController) {
 
         ScreenTitle("Meal Details")
 
+        CustomTextField("Meal Name", mealName) {
+            newText -> mealName = newText
+            viewModel.updateMealByID(mealID, mealName)
+        }
+
         CustomTextField("Product Name", productName) { newText -> productName = newText }
         Row() {
             CustomNumberField("Amount of Product", productAmount) { newText ->
                 productAmount = newText
             }
-            UnitDropdownList(listOf("g", "ml", "piece"), unit) { selected -> unit = selected }
+            UnitDropdownList(listOf("g", "ml"), unit) { selected -> unit = selected }
         }
         CustomButton("Add Product") {
             viewModel.addMealDetail(

@@ -74,4 +74,10 @@ dependencies {
     implementation (libs.retrofit)
     implementation (libs.converter.gson)
     implementation (libs.okhttp3.logging.interceptor)
+
+    implementation(libs.mpchart)
+
+//    implementation(libs.core)
+//    implementation(libs.vico.compose)
+//    implementation(libs.vico.compose.m3)
 }
