@@ -5,7 +5,10 @@ import android.graphics.Color
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -13,6 +16,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -28,13 +32,13 @@ import java.util.Locale
 
 fun parseAndFormatSqlDate(dateString: String): String {
     val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-    val outputFormat = SimpleDateFormat("dd MMM", Locale.getDefault()) // e.g. "21 Apr"
+    val outputFormat = SimpleDateFormat("dd MMM", Locale.getDefault())
 
     return try {
         val date = inputFormat.parse(dateString)
         outputFormat.format(date!!)
     } catch (e: Exception) {
-        "" // fallback if parsing fails
+        ""
     }
 }
 
@@ -47,10 +51,18 @@ fun RoomTestScreen() {
         ProductViewModelFactory(LocalContext.current.applicationContext as Application)
     )
     val masses by viewModel.massesState.collectAsStateWithLifecycle()
+    val todayMass by viewModel.todayMassState.collectAsStateWithLifecycle()
 
     var bodyMass by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(todayMass) {
+        if (todayMass != null) {
+            if (todayMass.value != -1.0)
+                bodyMass = todayMass.value.toString()
+        }
+    }
 
     Column {
+
         ScreenTitle("Measurements")
 
         AndroidView(factory = { context ->
@@ -64,25 +76,24 @@ fun RoomTestScreen() {
                 val dateLabels = masses.map { parseAndFormatSqlDate(it.date) }
 
                 val dataSet = LineDataSet(entries, "Sample Data").apply {
-                    color = Color.RED // Line color (modern purple)
-                    valueTextColor = Color.BLUE // Color of value labels
-                    lineWidth = 2f // Line width
-                    circleRadius = 4f // Size of circles on data points
-                    setDrawFilled(true) // Fill area under the curve
-                    fillColor = Color.WHITE // Fill color (lighter shade of purple)
-                    mode = LineDataSet.Mode.CUBIC_BEZIER // Smooth cubic bezier curve
-                    setDrawValues(false) // Hide the values at data points
+                    color = Color.RED
+                    valueTextColor = Color.BLUE
+                    lineWidth = 2f
+                    circleRadius = 4f
+                    setDrawFilled(true)
+                    fillColor = Color.WHITE
+                    mode = LineDataSet.Mode.STEPPED
+                    setDrawValues(false)
                     circleColors = listOf(Color.RED, Color.BLUE)
                 }
 
-                // 2. Set the data for the chart
                 data = LineData(dataSet)
 
                 xAxis.apply {
                     setDrawGridLines(false)
                     position = XAxis.XAxisPosition.BOTTOM
                     textColor = Color.BLACK
-                    textSize = 12f
+                    textSize = 16f
                     granularity = 1f
                     isGranularityEnabled = true
                     valueFormatter = object : ValueFormatter() {
@@ -93,30 +104,26 @@ fun RoomTestScreen() {
                     }
                 }
 
-                // 3. Styling the chart
                 description.text = "Sample Line Chart"
-                setBackgroundColor(Color.WHITE) // White background
+                setBackgroundColor(Color.WHITE)
 
-                // 4. Customizing X and Y Axes
                 xAxis.apply {
-                    setDrawGridLines(false) // No vertical grid lines
+                    setDrawGridLines(false)
                     position = XAxis.XAxisPosition.BOTTOM
                     textColor = Color.BLACK
                     textSize = 12f
                 }
 
                 axisLeft.apply {
-                    setDrawGridLines(false) // No horizontal grid lines
+                    setDrawGridLines(false)
                     textColor = Color.BLACK
                     textSize = 12f
                 }
 
-                axisRight.isEnabled = false // Disable right Y axis
+                axisRight.isEnabled = false
 
-                // 5. Disable the legend for simplicity
                 legend.isEnabled = false
 
-                // 6. Touch and scaling enabled for interactivity
                 setTouchEnabled(true)
                 isDragEnabled = true
                 setScaleEnabled(true)
@@ -155,17 +162,24 @@ fun RoomTestScreen() {
                         }
                     }
                 }
-                chart.invalidate() // Refresh the chart
+                chart.invalidate()
             },
             modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp) // Height of the chart
+                .fillMaxWidth()
+                .height(300.dp)
+                .padding(horizontal = 8.dp, vertical = 15.dp)
         )
 
         CustomNumberField("Body Mass", bodyMass) { newValue -> bodyMass = newValue }
-        CustomButton("Add Mass") {
-            viewModel.addMass(bodyMass.toDouble())
-            bodyMass = ""
+        CustomButton("Save") {
+            if (todayMass == null)
+                viewModel.addMass(bodyMass.toDouble())
+            else
+                viewModel.updateMassById(todayMass.id, bodyMass.toDouble())
         }
+
+//        CustomButton("Delete Last") {
+//            viewModel.deleteMassById(masses.last().id)
+//        }
     }
 }

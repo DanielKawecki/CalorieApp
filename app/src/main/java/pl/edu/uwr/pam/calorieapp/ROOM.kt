@@ -171,6 +171,9 @@ interface MassDao {
     @Query("SELECT * FROM mass ORDER BY date ASC")
     fun getAllMasses(): Flow<List<Mass>>
 
+    @Query("SELECT * FROM mass WHERE DATE(date) = DATE(CURRENT_TIMESTAMP)")
+    fun getTodayMass(): Flow<Mass>
+
     @Query("INSERT INTO mass (value, date) VALUES (:value, CURRENT_TIMESTAMP)")
     suspend fun insert(value: Double)
 
@@ -287,6 +290,7 @@ class ProductRepository(
     //    --------------------- MASS DAO ------------------------
 
     fun getAllMasses() = massDao.getAllMasses()
+    fun getTodayMass() = massDao.getTodayMass()
     suspend fun addMass(value: Double) = massDao.insert(value)
     suspend fun updateMassById(id: Int, value: Double) = massDao.updateMassById(id, value)
     suspend fun deleteMassById(id: Int) = massDao.deleteMassById(id)
@@ -346,6 +350,10 @@ class ProductViewModel(application: Application) : ViewModel() {
     val massesState: StateFlow<List<Mass>>
         get() = _masses
 
+    private val _todayMass = MutableStateFlow(Mass(0, -1.0, ""))
+    val todayMassState: StateFlow<Mass>
+        get() = _todayMass
+
     init {
         val db = ProductDatabase.getDatabase(application)
         val productDao = db.productDao()
@@ -361,6 +369,7 @@ class ProductViewModel(application: Application) : ViewModel() {
         fetchNutrientsSum()
         fetchCustomMeals()
         fetchMasses()
+        fetchTodayMass()
     }
 
     private fun fetchProducts() {
@@ -515,6 +524,14 @@ class ProductViewModel(application: Application) : ViewModel() {
         viewModelScope.launch {
             repository.getAllMasses().collect { mass ->
                 _masses.value = mass
+            }
+        }
+    }
+
+    private fun fetchTodayMass() {
+        viewModelScope.launch {
+            repository.getTodayMass().collect { mass ->
+                _todayMass.value = mass
             }
         }
     }
