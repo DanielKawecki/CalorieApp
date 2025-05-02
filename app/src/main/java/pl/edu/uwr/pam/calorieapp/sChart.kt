@@ -153,7 +153,7 @@ fun ChartScreen() {
                 .padding(horizontal = 8.dp, vertical = 15.dp)
         )
 
-        CustomNumberField("Body Mass", bodyMass) { newValue -> bodyMass = newValue }
+        CustomNumberField("Body Mass", bodyMass, true) { newValue -> bodyMass = newValue }
         CustomButton("Save") {
             if (todayMass == null)
                 viewModel.addMass(bodyMass.toDouble())

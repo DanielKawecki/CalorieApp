@@ -56,6 +56,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
@@ -147,12 +148,12 @@ fun CustomTextField(label: String, content: String, onValueChange: (String) -> U
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomNumberField(label: String, content: String, onValueChange: (String) -> Unit) {
+fun CustomNumberField(label: String, content: String, maxWidth: Boolean, onValueChange: (String) -> Unit) {
 
     OutlinedTextField(
         modifier = Modifier
-            .padding(4.dp),
-//            .fillMaxWidth(),
+            .padding(4.dp)
+            .then( if (maxWidth) Modifier.fillMaxWidth() else Modifier ),
         value = content,
         label = { Text(label) },
         onValueChange = onValueChange,

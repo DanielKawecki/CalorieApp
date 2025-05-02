@@ -104,6 +104,7 @@ fun BottomNavGraph(navController: NavHostController, padding: PaddingValues){
         composable(route = Screens.Home.route) { HomeScreen(navController) } //{ HomeScreen(navController) }
         composable(route = Screens.Meals.route) { MealsScreen(navController) }
         composable(route = Screens.History.route) { ChartScreen() }
+        composable(route = Screens.Settings.route) { SettingsScreen() }
         composable(route = Screens.Add.route + "/{meal}") {
             val meal = it.arguments?.getString("meal")
             AddScreen(meal, navController)
@@ -125,7 +126,7 @@ fun BottomNavGraph(navController: NavHostController, padding: PaddingValues){
 @Composable
 fun BottomMenu(navController: NavHostController){
     val screens = listOf(
-        BottomBar.Home,  BottomBar.Recipes, BottomBar.History
+        BottomBar.Home,  BottomBar.Recipes, BottomBar.History, BottomBar.Settings
     )
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()

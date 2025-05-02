@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.FloatingActionButton
@@ -38,7 +39,7 @@ sealed class Screens(val route: String) {
     data object History : Screens("history")
     data object Add : Screens("add")
     data object Edit : Screens("edit")
-    data object Options : Screens("options")
+    data object Settings : Screens("settings")
     data object Meals : Screens("meals")
     data object MealDetails : Screens("mealDetails")
 }
@@ -50,5 +51,6 @@ sealed class BottomBar(
 ) {
     data object Home : BottomBar(Screens.Home.route, "Home", Icons.Default.Home)
     data object Recipes : BottomBar(Screens.Meals.route, "Recipes", Icons.Default.Edit)
-    data object History : BottomBar(Screens.History.route, "Test", Icons.Default.DateRange)
+    data object History : BottomBar(Screens.History.route, "Measurements", Icons.Default.DateRange)
+    data object Settings : BottomBar(Screens.Settings.route, "Settings", Icons.Default.Settings)
 }

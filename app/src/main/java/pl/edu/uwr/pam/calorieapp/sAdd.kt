@@ -56,7 +56,7 @@ fun Search(meal: String?, viewModel: ProductViewModel, navController: NavHostCon
         CustomTextField("Product Name", productName) { newText -> productName = newText }
 
         Row() {
-            CustomNumberField("Amount of Product", amount) { newText -> amount = newText }
+            CustomNumberField("Amount of Product", amount, false) { newText -> amount = newText }
             UnitDropdownList(listOf("g", "ml"), "g") { selected -> unit = selected }
         }
 

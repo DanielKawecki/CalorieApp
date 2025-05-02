@@ -46,7 +46,7 @@ fun EditScreen(idArg: String?, nameArg: String?, amountArg: String?, navControll
 //        )
 
         Row() {
-            CustomNumberField("Amount of Product", amount) { newText -> amount = newText }
+            CustomNumberField("Amount of Product", amount, false) { newText -> amount = newText }
             UnitDropdownList(listOf("g", "ml"), unit) { selected -> unit = selected }
         }
 

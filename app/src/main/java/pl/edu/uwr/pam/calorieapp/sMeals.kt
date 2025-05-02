@@ -122,7 +122,7 @@ fun MealDetailsScreen(idm: String?, mealArg: String?, navController: NavControll
 
         CustomTextField("Product Name", productName) { newText -> productName = newText }
         Row() {
-            CustomNumberField("Amount of Product", productAmount) { newText ->
+            CustomNumberField("Amount of Product", productAmount, false) { newText ->
                 productAmount = newText
             }
             UnitDropdownList(listOf("g", "ml"), unit) { selected -> unit = selected }
