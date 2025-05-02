@@ -33,14 +33,53 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
+import java.util.Calendar
+import java.util.concurrent.TimeUnit
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            scheduleDailyNotifications()
             Navigation()
         }
+    }
+
+    private fun scheduleDailyNotifications() {
+        val hours = listOf(9, 14, 20)
+
+        hours.forEachIndexed { index, hour ->
+            val delay = calculateInitialDelayForHour(hour)
+            val workRequest = PeriodicWorkRequestBuilder<DailyNotificationWorker>(1, TimeUnit.DAYS)
+                .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                .setInputData(workDataOf("notification_id" to index, "hour" to hour))
+                .build()
+
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                "daily_notification_$index",
+                ExistingPeriodicWorkPolicy.KEEP,
+                workRequest
+            )
+        }
+    }
+
+    private fun calculateInitialDelayForHour(hour: Int): Long {
+        val now = Calendar.getInstance()
+        val target = now.clone() as Calendar
+        target.set(Calendar.HOUR_OF_DAY, hour)
+        target.set(Calendar.MINUTE, 0)
+        target.set(Calendar.SECOND, 0)
+
+        if (target.before(now)) {
+            target.add(Calendar.DAY_OF_MONTH, 1)
+        }
+
+        return target.timeInMillis - now.timeInMillis
     }
 }
 
@@ -64,7 +103,7 @@ fun BottomNavGraph(navController: NavHostController, padding: PaddingValues){
     ) {
         composable(route = Screens.Home.route) { HomeScreen(navController) } //{ HomeScreen(navController) }
         composable(route = Screens.Meals.route) { MealsScreen(navController) }
-        composable(route = Screens.History.route) { RoomTestScreen() }
+        composable(route = Screens.History.route) { ChartScreen() }
         composable(route = Screens.Add.route + "/{meal}") {
             val meal = it.arguments?.getString("meal")
             AddScreen(meal, navController)
