@@ -51,6 +51,6 @@ sealed class BottomBar(
 ) {
     data object Home : BottomBar(Screens.Home.route, "Home", Icons.Default.Home)
     data object Recipes : BottomBar(Screens.Meals.route, "Recipes", Icons.Default.Edit)
-    data object History : BottomBar(Screens.History.route, "Measurements", Icons.Default.DateRange)
+    data object History : BottomBar(Screens.History.route, "Charts", Icons.Default.DateRange)
     data object Settings : BottomBar(Screens.Settings.route, "Settings", Icons.Default.Settings)
 }

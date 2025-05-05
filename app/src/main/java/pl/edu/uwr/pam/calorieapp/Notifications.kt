@@ -26,6 +26,11 @@ class DailyNotificationWorker(
             20 -> "Enter your dinner!"
             else -> "Reminder!"
         }
+
+        val prefs = applicationContext.getSharedPreferences("prefs", Context.MODE_PRIVATE)
+        val enabled = prefs.getBoolean("notifications_enabled", true)
+        if (!enabled) return Result.success()
+
         showNotification("Calorie Reminder", message)
         return Result.success()
     }
@@ -70,7 +75,7 @@ fun showNotification(context: Context, title: String, message: String) {
     val notification = NotificationCompat.Builder(context, channelId)
         .setContentTitle(title)
         .setContentText(message)
-        .setSmallIcon(R.drawable.ic_launcher_background)
+        .setSmallIcon(android.R.drawable.ic_dialog_info)
         .setAutoCancel(true)
         .build()
 
@@ -82,7 +87,11 @@ fun DebugNotificationButton() {
     val context = LocalContext.current
 
     Button(onClick = {
-        showNotification(context, "Test Notification", "This is a debug test!")
+        val prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE)
+        val enabled = prefs.getBoolean("notifications_enabled", true)
+        if (enabled) {
+            showNotification(context, "Test Notification", "This is a debug test!")
+        }
     }) {
         Text("Trigger Notification")
     }

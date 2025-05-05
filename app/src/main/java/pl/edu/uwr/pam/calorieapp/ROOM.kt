@@ -46,6 +46,11 @@ data class Product(
     val date: String
 )
 
+data class DayCalorieSum(
+    val date: String,
+    val calorie: Int
+)
+
 @Entity(tableName = "meals")
 data class Meal(
     @PrimaryKey(autoGenerate = true) val idm: Int,
@@ -116,12 +121,19 @@ interface ProductDao {
         FROM products WHERE DATE(date)=CURRENT_DATE""")
     fun getNutrientsSum(): Flow<NutrientSet>
 
+    @Query("SELECT DATE(date) as date, SUM(calorie) AS calorie FROM products GROUP BY DATE(date)")
+    fun getCalorieSumByDate(): Flow<List<DayCalorieSum>>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertOLD(product: Product)
 
     @Query("""INSERT INTO products (name, amount, meal, calorie, protein, fats, carbs, date) 
         VALUES (:name, :amount, :meal, :calorie, :protein, :fats, :carbs, CURRENT_TIMESTAMP)""")
     suspend fun insert(name: String, amount: String, meal: String, calorie: Int, protein: Double, fats: Double, carbs: Double)
+
+    @Query("""INSERT INTO products (name, amount, meal, calorie, protein, fats, carbs, date) 
+        VALUES ("Sample", "100g", "Breakfast", :calorie, 12.0, 6.0, 4.0, :date)""")
+    suspend fun insertSample(calorie: Int, date: String)
 
     @Query("UPDATE products SET name=:name, amount=:amount, calorie=:calorie, protein=:protein, fats=:fats, carbs=:carbs WHERE id = :id")
     suspend fun updateProductById(id: Int, name: String, amount: String, calorie: Int, protein: Double, fats: Double, carbs: Double)
@@ -177,11 +189,17 @@ interface MassDao {
     @Query("INSERT INTO mass (value, date) VALUES (:value, CURRENT_TIMESTAMP)")
     suspend fun insert(value: Double)
 
+    @Query("INSERT INTO mass (value, date) VALUES (:value, :date)")
+    suspend fun insertSample(value: Double, date: String)
+
     @Query("UPDATE mass SET value=:value WHERE id = :id")
     suspend fun updateMassById(id: Int, value: Double)
 
     @Query("DELETE FROM mass WHERE id = :id")
     suspend fun deleteMassById(id: Int)
+
+    @Query("DELETE FROM mass")
+    suspend fun deleteAll()
 }
 
 @Database(entities = [Product::class, Meal::class, MealDetail::class, Mass::class], version = 1, exportSchema = false)
@@ -232,6 +250,7 @@ class ProductRepository(
     fun getTodayProducts() = productDao.getTodayProducts()
     fun getProductById(productId: Int) = productDao.getProductById(productId)
     fun getNutrientsSum() = productDao.getNutrientsSum()
+    fun getCalorieSumByDate() = productDao.getCalorieSumByDate()
 
     suspend fun updateProductById(productId: Int, name: String, amount: String) {
         val response = api.getNutrition("$amount of $name")
@@ -243,7 +262,7 @@ class ProductRepository(
     }
 
     suspend fun deleteProductById(productId: Int) = productDao.deleteProductById(productId)
-    suspend fun clear() = productDao.deleteAll()
+    suspend fun deleteAllProducts() = productDao.deleteAll()
 
     suspend fun getNutrition(query: String): NutritionResponse {
         return api.getNutrition(query)
@@ -260,6 +279,10 @@ class ProductRepository(
 
     suspend fun addProduct(name: String, amount: String, meal: String, calorie: Int, protein: Double, fats: Double, carbs: Double) {
         productDao.insert(name, amount, meal, calorie, protein, fats, carbs)
+    }
+
+    suspend fun addSampleProduct(calorie: Int, date: String) {
+        productDao.insertSample(calorie, date)
     }
 
     //    --------------------- MEAL DAO ------------------------
@@ -292,8 +315,10 @@ class ProductRepository(
     fun getAllMasses() = massDao.getAllMasses()
     fun getTodayMass() = massDao.getTodayMass()
     suspend fun addMass(value: Double) = massDao.insert(value)
+    suspend fun addSampleMass(value: Double, date: String) = massDao.insertSample(value, date)
     suspend fun updateMassById(id: Int, value: Double) = massDao.updateMassById(id, value)
     suspend fun deleteMassById(id: Int) = massDao.deleteMassById(id)
+    suspend fun deleteAllMass() = massDao.deleteAll()
 
     //    --------------------- SHARED PREFERENCES ------------------------
 
@@ -334,6 +359,10 @@ class ProductViewModel(application: Application) : ViewModel() {
     val nutrientsSum: StateFlow<NutrientSet>
         get() = _nutrientsSum
 
+    private val _calorieSumByDate = MutableStateFlow<List<DayCalorieSum>>(emptyList())
+    val calorieSumByDate: StateFlow<List<DayCalorieSum>>
+        get() = _calorieSumByDate
+
     private val _customMeals = MutableStateFlow<List<Meal>>(emptyList())
     val customMeals: StateFlow<List<Meal>>
         get() = _customMeals
@@ -370,6 +399,7 @@ class ProductViewModel(application: Application) : ViewModel() {
         fetchCustomMeals()
         fetchMasses()
         fetchTodayMass()
+        fetchDayCalorieSum()
     }
 
     private fun fetchProducts() {
@@ -392,6 +422,14 @@ class ProductViewModel(application: Application) : ViewModel() {
         viewModelScope.launch {
             repository.getNutrientsSum().collect { users ->
                 _nutrientsSum.value = users
+            }
+        }
+    }
+
+    private fun fetchDayCalorieSum() {
+        viewModelScope.launch {
+            repository.getCalorieSumByDate().collect { sum ->
+                _calorieSumByDate.value = sum
             }
         }
     }
@@ -420,9 +458,9 @@ class ProductViewModel(application: Application) : ViewModel() {
         }
     }
 
-    fun clearProducts() {
+    fun clearAllProducts() {
         viewModelScope.launch {
-            repository.clear()
+            repository.deleteAllProducts()
         }
     }
 
@@ -435,6 +473,12 @@ class ProductViewModel(application: Application) : ViewModel() {
     fun addProduct(name: String, amount: String, meal: String, calorie: Int, protein: Double, fats: Double, carbs: Double) {
         viewModelScope.launch {
             repository.addProduct(name, amount, meal, calorie, protein, fats, carbs)
+        }
+    }
+
+    fun addSampleProduct(calorie: Int, date: String) {
+        viewModelScope.launch {
+            repository.addSampleProduct(calorie, date)
         }
     }
 
@@ -542,6 +586,12 @@ class ProductViewModel(application: Application) : ViewModel() {
         }
     }
 
+    fun addSampleMass(value: Double, date: String) {
+        viewModelScope.launch {
+            repository.addSampleMass(value, date)
+        }
+    }
+
     fun updateMassById(id: Int, value: Double) {
         viewModelScope.launch {
             repository.updateMassById(id, value)
@@ -551,6 +601,12 @@ class ProductViewModel(application: Application) : ViewModel() {
     fun deleteMassById(id: Int) {
         viewModelScope.launch {
             repository.deleteMassById(id)
+        }
+    }
+
+    fun clearAllMass() {
+        viewModelScope.launch {
+            repository.deleteAllMass()
         }
     }
 

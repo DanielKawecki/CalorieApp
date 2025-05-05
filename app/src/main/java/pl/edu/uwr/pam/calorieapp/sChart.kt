@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -31,32 +32,20 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import kotlin.math.pow
 
-fun parseAndFormatSqlDate(dateString: String): String {
-    val inputFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-    val outputFormat = SimpleDateFormat("dd MMM", Locale.getDefault())
-
-    return try {
-        val date = inputFormat.parse(dateString)
-        outputFormat.format(date!!)
-    } catch (e: Exception) {
-        ""
-    }
-}
-
-fun formatXAxis(xAxis: XAxis, dateLabels: List<String>) {
+fun formatXAxis(xAxis: XAxis) {
     xAxis.apply {
         setDrawGridLines(true)
         position = XAxis.XAxisPosition.BOTTOM
         textColor = Color.BLACK
         textSize = 12f
-        granularity = 1f
+        granularity = 24 * 60 * 60 * 1000f
         isGranularityEnabled = true
         gridColor = Color.LTGRAY
         gridLineWidth = 2f
         valueFormatter = object : ValueFormatter() {
+            private val dateFormat = SimpleDateFormat("dd MMM", Locale.getDefault())
             override fun getFormattedValue(value: Float): String {
-                val index = value.toInt()
-                return dateLabels.getOrNull(index) ?: ""
+                return dateFormat.format(value.toLong())
             }
         }
     }
@@ -82,16 +71,23 @@ fun trendLine(entries: List<Entry>, daysAhead: Int): List<Entry> {
     val xMean = entries.sumOf { it.x.toDouble() } / n
     val yMean = entries.sumOf { it.y.toDouble() } / n
 
-    val numerator = entries.sumOf { (it.x - xMean).toDouble() * (it.y - yMean).toDouble() }
-    val denominator = entries.sumOf { (it.x - xMean).toDouble().pow(2) }
+    val numerator = entries.sumOf { (it.x - xMean) * (it.y - yMean) }
+    val denominator = entries.sumOf { (it.x - xMean).pow(2) }
 
     val slope = numerator / denominator
     val intercept = yMean - slope * xMean
 
+    val oneDayMillis = 24 * 60 * 60 * 1000f
+    val firstX = entries.minOf { it.x }
     val lastX = entries.maxOf { it.x }
+    val futureEnd = lastX + daysAhead * oneDayMillis
 
-    return (1..daysAhead).map { i ->
-        val x = lastX + i
+    val step = oneDayMillis
+    val totalRange = generateSequence(firstX) { it + step }
+        .takeWhile { it <= futureEnd }
+        .toList()
+
+    return totalRange.map { x ->
         val y = (slope * x + intercept).toFloat()
         Entry(x, y)
     }
@@ -107,6 +103,7 @@ fun ChartScreen() {
     )
     val masses by viewModel.massesState.collectAsStateWithLifecycle()
     val todayMass by viewModel.todayMassState.collectAsStateWithLifecycle()
+    val calorieByDate by viewModel.calorieSumByDate.collectAsStateWithLifecycle()
 
     var bodyMass by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(todayMass) {
@@ -134,22 +131,82 @@ fun ChartScreen() {
                     setTouchEnabled(true)
                     isDragEnabled = true
                     setScaleEnabled(true)
+                    description.text = "Body Mass"
+                    description.textSize = 14f
                 }
             },
             update = { chart ->
-                val entries = masses.mapIndexed { index, mass ->
-                    Entry(index.toFloat(), mass.value.toFloat())
+
+                val entries = masses.map { mass ->
+                    val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                        .parse(mass.date)?.time?.toFloat() ?: 0f
+                    Entry(timestamp, mass.value.toFloat())
                 }
 
-                val dateLabels = masses.map { parseAndFormatSqlDate(it.date) }
+                val massDataSet = createMassDataSet(entries)
 
-                chart.data = LineData(createMassDataSet(entries))
-                formatXAxis(chart.xAxis, dateLabels)
+                val trendEntries = trendLine(entries, 5)
+                val trendDataSet = LineDataSet(trendEntries, "Trend").apply {
+                    color = Color.GRAY
+                    lineWidth = 2f
+                    setDrawCircles(false)
+                    setDrawValues(false)
+                    enableDashedLine(10f, 5f, 0f)
+                }
+
+                chart.data = LineData(massDataSet, trendDataSet)
+                formatXAxis(chart.xAxis)
                 chart.invalidate()
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp)
+                .height(225.dp)
+                .padding(horizontal = 8.dp, vertical = 15.dp)
+        )
+
+//        for (item in calorieByDate) {
+//            Text(text = "Date: ${item.date}, Value: ${item.calorie}", fontSize = 20.sp)
+//        }
+        AndroidView(
+            factory = { context ->
+                LineChart(context).apply {
+                    setBackgroundColor(Color.WHITE)
+                    axisRight.isEnabled = false
+                    axisLeft.apply {
+                        setDrawGridLines(true)
+                        textColor = Color.BLACK
+                        textSize = 12f
+                    }
+                    legend.isEnabled = false
+                    setTouchEnabled(true)
+                    isDragEnabled = true
+                    setScaleEnabled(true)
+                    description.text = "Calorie"
+                    description.textSize = 14f
+                }
+            },
+            update = { chart ->
+                val entries = calorieByDate.mapNotNull { sum ->
+                    val timestamp = try {
+                        SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(sum.date)?.time?.toFloat()
+                    } catch (e: Exception) {
+                        null
+                    }
+
+                    timestamp?.let { Entry(it, sum.calorie.toFloat()) }
+                }
+
+                val calorieDataSet = createMassDataSet(entries).apply {
+                    color = Color.argb(255, 255,  102, 0)
+                }
+
+                chart.data = LineData(calorieDataSet)
+                formatXAxis(chart.xAxis)
+                chart.invalidate()
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(225.dp)
                 .padding(horizontal = 8.dp, vertical = 15.dp)
         )
 
@@ -160,7 +217,5 @@ fun ChartScreen() {
             else
                 viewModel.updateMassById(todayMass.id, bodyMass.toDouble())
         }
-
-        DebugNotificationButton()
     }
 }
