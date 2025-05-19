@@ -39,6 +39,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -164,6 +165,28 @@ fun CustomNumberField(label: String, content: String, maxWidth: Boolean, onValue
             cursorColor = Color.DarkGray
         ),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CustomDateField(label: String, state: MutableState<String>) {
+    OutlinedTextField(
+        value = state.value,
+        onValueChange = { input ->
+            if (input.all { it.isDigit() } && input.length <= if (label == "YYYY") 4 else 2)
+                state.value = input
+        },
+        label = { Text(label) },
+        modifier = Modifier.width(if (label == "YYYY") 120.dp else 80.dp).padding(4.dp),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        singleLine = true,
+        textStyle = TextStyle(fontSize = 20.sp, color = Color.DarkGray),
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            focusedBorderColor = Color.DarkGray,
+            focusedLabelColor = Color.DarkGray,
+            cursorColor = Color.DarkGray
+        ),
     )
 }
 

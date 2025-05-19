@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 
 sealed class Screens(val route: String) {
+    data object Welcome : Screens("welcome")
     data object Home : Screens("home")
     data object History : Screens("history")
     data object Add : Screens("add")
@@ -42,6 +43,7 @@ sealed class Screens(val route: String) {
     data object Settings : Screens("settings")
     data object Meals : Screens("meals")
     data object MealDetails : Screens("mealDetails")
+    data object Decider : Screens("decider")
 }
 
 sealed class BottomBar(

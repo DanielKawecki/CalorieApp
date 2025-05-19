@@ -98,10 +98,12 @@ fun Navigation(){
 fun BottomNavGraph(navController: NavHostController, padding: PaddingValues){
     NavHost(
         navController = navController,
-        startDestination = Screens.Home.route,
+        startDestination = Screens.Decider.route,
         modifier = Modifier.padding(padding)
     ) {
-        composable(route = Screens.Home.route) { HomeScreen(navController) } //{ HomeScreen(navController) }
+        composable(route = Screens.Welcome.route) { WelcomeScreen(navController) }
+        composable(route = Screens.Decider.route) { DeciderScreen(navController) }
+        composable(route = Screens.Home.route) { HomeScreen(navController) }
         composable(route = Screens.Meals.route) { MealsScreen(navController) }
         composable(route = Screens.History.route) { ChartScreen() }
         composable(route = Screens.Settings.route) { SettingsScreen() }
