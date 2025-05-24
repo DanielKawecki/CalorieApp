@@ -7,16 +7,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -24,32 +20,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import java.util.Calendar
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
-//@Composable
-//fun NumberInputField(label: String, state: MutableState<String>) {
-//    OutlinedTextField(
-//        value = state.value,
-//        onValueChange = { input ->
-//            if (input.all { it.isDigit() } && input.length <= if (label == "YYYY") 4 else 2)
-//                state.value = input
-//        },
-//        label = { Text(label) },
-//        modifier = Modifier.width(if (label == "YYYY") 120.dp else 80.dp).padding(4.dp),
-//        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-//        singleLine = true
-//    )
-//}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WelcomeScreen(navController: NavController) {
 
     val context = LocalContext.current
+    val prefs = context.getSharedPreferences("prefs", Context.MODE_PRIVATE)
 
     var height by rememberSaveable { mutableStateOf("") }
     var bodyMass by rememberSaveable { mutableStateOf("") }
@@ -58,19 +39,17 @@ fun WelcomeScreen(navController: NavController) {
     val month = rememberSaveable { mutableStateOf("") }
     val year = rememberSaveable { mutableStateOf("") }
 
-    val prefs = context.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
-
     val sex = listOf("Male", "Female")
-    val selectedSex = rememberSaveable() { mutableStateOf("") }
+    val selectedSex = rememberSaveable { mutableStateOf("") }
 
-    val activity = listOf("None", "Low", "Medium", "Athletic")
-    val selectedActivity = rememberSaveable { mutableStateOf("") }
+    val activity = listOf("Sedentary", "Low", "Medium", "Athletic")
+    val selectedActivity = rememberSaveable { mutableIntStateOf(-1) }
 
     Column(Modifier.padding(16.dp)) {
 
         ScreenTitle("Welcome")
 
-        Text(text = "Gender", fontSize = 20.sp, modifier = Modifier.padding(4.dp))
+        Text(text = "Sex", fontSize = 20.sp, modifier = Modifier.padding(4.dp))
         Row {
             sex.forEach { option ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -90,7 +69,7 @@ fun WelcomeScreen(navController: NavController) {
         CustomNumberField("Height", height, true) { newVal -> height = newVal }
         CustomNumberField("Body Mass", bodyMass, true) { newVal -> bodyMass = newVal }
 
-        Text(text = "Birth Date", fontSize = 20.sp, modifier = Modifier.padding(4.dp))
+        Text(text = "Date of Birth", fontSize = 20.sp, modifier = Modifier.padding(4.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             CustomDateField("DD", day)
             Spacer(Modifier.width(4.dp))
@@ -100,13 +79,13 @@ fun WelcomeScreen(navController: NavController) {
         }
 
         Text(text = "Activity Level", fontSize = 20.sp, modifier = Modifier.padding(4.dp))
-        activity.forEach { option ->
+        activity.forEachIndexed { index, option ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(
-                    selected = selectedActivity.value == option,
+                    selected = selectedActivity.intValue == index,
                     onClick = {
-                        selectedActivity.value = option
-                        prefs.edit().putString("activity", option).apply()
+                        selectedActivity.intValue = index
+                        prefs.edit().putInt("activity", index).apply()
                     },
                     modifier = Modifier.height(40.dp),
                     colors = RadioButtonDefaults.colors(selectedColor = Color.DarkGray)
@@ -117,8 +96,28 @@ fun WelcomeScreen(navController: NavController) {
 
         CustomButton("Continue") {
             val dateStr = "${day.value}/${month.value}/${year.value}"
+
+            val selectedDate = LocalDate.of(year.value.toInt(), month.value.toInt(), day.value.toInt())
+            val today = LocalDate.now()
+            val age = ChronoUnit.YEARS.between(selectedDate, today)
+
+            val budget = calculateCalorieBudget(
+                    selectedSex.value,
+                    height.toDouble(),
+                    bodyMass.toDouble(),
+                    age.toInt(),
+                    selectedActivity.intValue + 1
+            )
+
+            val nutrients = calculateMacros(budget)
+
             prefs.edit()
                 .putString("selected_date", dateStr)
+                .putInt("age", age.toInt())
+                .putInt("budget", budget)
+                .putInt("protein", nutrients.proteinGrams)
+                .putInt("fats", nutrients.fatGrams)
+                .putInt("carbs", nutrients.carbGrams)
                 .putString("height", height)
                 .putString("body_mass", bodyMass)
                 .putBoolean("setup_completed", true)
@@ -126,4 +125,42 @@ fun WelcomeScreen(navController: NavController) {
             navController.navigate(Screens.Home.route)
         }
     }
+}
+
+fun calculateCalorieBudget(
+    sex: String,
+    heightCm: Double,
+    weightKg: Double,
+    age: Int,
+    activityLevel: Int
+): Int {
+    val bmr = if (sex.lowercase() == "male") {
+        10 * weightKg + 6.25 * heightCm - 5 * age + 5
+    } else {
+        10 * weightKg + 6.25 * heightCm - 5 * age - 161
+    }
+
+    val activityMultiplier = when (activityLevel) {
+        1 -> 1.2
+        2 -> 1.4
+        3 -> 1.6
+        4 -> 1.8
+        else -> 1.2
+    }
+
+    return (bmr * activityMultiplier).toInt()
+}
+
+data class Macronutrients(val proteinGrams: Int, val fatGrams: Int, val carbGrams: Int)
+
+fun calculateMacros(calorieBudget: Int): Macronutrients {
+    val proteinCalories = calorieBudget * 0.20
+    val fatCalories = calorieBudget * 0.25
+    val carbCalories = calorieBudget * 0.55
+
+    val proteinGrams = (proteinCalories / 4).toInt()
+    val fatGrams = (fatCalories / 9).toInt()
+    val carbGrams = (carbCalories / 4).toInt()
+
+    return Macronutrients(proteinGrams, fatGrams, carbGrams)
 }
