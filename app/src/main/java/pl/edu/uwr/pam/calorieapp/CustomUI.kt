@@ -129,7 +129,9 @@ fun CustomButtonPreview() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomTextField(label: String, content: String, onValueChange: (String) -> Unit) {
+fun CustomTextField(label: String, content: String, showError: Boolean, onValueChange: (String) -> Unit) {
+
+    val isError = showError && content.isBlank()
 
     OutlinedTextField(
         modifier = Modifier
@@ -143,18 +145,66 @@ fun CustomTextField(label: String, content: String, onValueChange: (String) -> U
             focusedBorderColor = Color.DarkGray,
             focusedLabelColor = Color.DarkGray,
             cursorColor = Color.DarkGray
-        )
+        ),
+        isError = isError
     )
+}
+
+@Composable
+fun FoodInputField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    foodList: List<String>,
+    modifier: Modifier = Modifier
+) {
+    var showSuggestions by remember { mutableStateOf(true) }
+
+    val suggestions = remember(value, showSuggestions) {
+        if (value.length >= 2 && showSuggestions)
+            foodList
+                .filter { it.startsWith(value, ignoreCase = true) }
+                .take(8)
+        else
+            emptyList()
+    }
+
+    Column(modifier = modifier) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {
+                onValueChange(it)
+                showSuggestions = true // allow suggestions while typing
+            },
+            label = { Text("Food") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        suggestions.forEach { suggestion ->
+            Text(
+                text = suggestion,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        onValueChange(suggestion)
+                        showSuggestions = false // hide suggestions after selection
+                    }
+                    .padding(8.dp),
+                fontSize = 16.sp
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomNumberField(label: String, content: String, maxWidth: Boolean, onValueChange: (String) -> Unit) {
+fun CustomNumberField(label: String, content: String, showError: Boolean, maxWidth: Boolean, onValueChange: (String) -> Unit) {
+
+    val isError = showError && content.isBlank()
 
     OutlinedTextField(
         modifier = Modifier
             .padding(4.dp)
-            .then( if (maxWidth) Modifier.fillMaxWidth() else Modifier ),
+            .then(if (maxWidth) Modifier.fillMaxWidth() else Modifier),
         value = content,
         label = { Text(label) },
         onValueChange = onValueChange,
@@ -164,13 +214,17 @@ fun CustomNumberField(label: String, content: String, maxWidth: Boolean, onValue
             focusedLabelColor = Color.DarkGray,
             cursorColor = Color.DarkGray
         ),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        isError = isError
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomDateField(label: String, state: MutableState<String>) {
+fun CustomDateField(label: String, state: MutableState<String>, showError: Boolean) {
+
+    val isError = showError && state.value.isBlank()
+
     OutlinedTextField(
         value = state.value,
         onValueChange = { input ->
@@ -178,7 +232,9 @@ fun CustomDateField(label: String, state: MutableState<String>) {
                 state.value = input
         },
         label = { Text(label) },
-        modifier = Modifier.width(if (label == "YYYY") 120.dp else 80.dp).padding(4.dp),
+        modifier = Modifier
+            .width(if (label == "YYYY") 120.dp else 80.dp)
+            .padding(4.dp),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true,
         textStyle = TextStyle(fontSize = 20.sp, color = Color.DarkGray),
@@ -187,13 +243,14 @@ fun CustomDateField(label: String, state: MutableState<String>) {
             focusedLabelColor = Color.DarkGray,
             cursorColor = Color.DarkGray
         ),
+        isError = isError
     )
 }
 
 @Preview(showBackground = true)
 @Composable
 fun TextFieldPreview() {
-    CustomTextField(label = "Label", content = "This is a content", onValueChange = { })
+    CustomTextField(label = "Label", content = "This is a content", true, onValueChange = { })
 }
 
 @Composable
@@ -271,7 +328,9 @@ fun ProductEntry(product: Product, onDelete: () -> Unit, onEdit: () -> Unit) {
                 fontSize = 18.sp,
             )
             Icon(
-                modifier = Modifier.padding(end = 15.dp).clickable { onDelete() },
+                modifier = Modifier
+                    .padding(end = 15.dp)
+                    .clickable { onDelete() },
                 imageVector = Icons.Default.Clear,
                 contentDescription = null
             )
@@ -326,7 +385,9 @@ fun DetailEntry(detail: MealDetail, onDelete: () -> Unit, onEdit: () -> Unit) {
                 fontSize = 18.sp,
             )
             Icon(
-                modifier = Modifier.padding(end = 15.dp).clickable { onDelete() },
+                modifier = Modifier
+                    .padding(end = 15.dp)
+                    .clickable { onDelete() },
                 imageVector = Icons.Default.Clear,
                 contentDescription = null
             )

@@ -32,13 +32,14 @@ fun EditScreen(idArg: String?, nameArg: String?, amountArg: String?, navControll
     var productName by rememberSaveable { mutableStateOf(nameArg!!) }
     var amount by rememberSaveable { mutableStateOf(amountNumber) }
     var unit by rememberSaveable { mutableStateOf(amountUnit) }
+    var showErrors by rememberSaveable { mutableStateOf(false) }
 
     Column {
 
 //        Text(text = "Edit", fontSize = 20.sp)
         ScreenTitle("Edit")
 
-        CustomTextField("Name", productName) { newVal -> productName = newVal }
+        CustomTextField("Name", productName, showErrors) { newVal -> productName = newVal }
 //        TextField(
 //            value = productName,
 //            onValueChange = { productName = it },
@@ -46,13 +47,18 @@ fun EditScreen(idArg: String?, nameArg: String?, amountArg: String?, navControll
 //        )
 
         Row() {
-            CustomNumberField("Amount of Product", amount, false) { newText -> amount = newText }
+            CustomNumberField("Amount of Product", amount, showErrors, false) { newText -> amount = newText }
             UnitDropdownList(listOf("g", "ml"), unit) { selected -> unit = selected }
         }
 
         CustomButton("Update") {
-            viewModel.updateProductById(idArg!!.toInt(), productName, amount + unit)
-            navController.navigate(Screens.Home.route)
+            if (productName == "" || amount == "") {
+                showErrors = true
+            }
+            else {
+                viewModel.updateProductById(idArg!!.toInt(), productName, amount + unit)
+                navController.navigate(Screens.Home.route)
+            }
         }
 //        Button(
 //            onClick = {

@@ -41,15 +41,21 @@ fun MealsScreen(navController: NavController) {
     val meals by viewModel.customMeals.collectAsStateWithLifecycle()
 
     var mealName by rememberSaveable { mutableStateOf("") }
-//    var mealDetailCount by rememberSaveable { mutableStateOf("Loading...") }
+    var showErrors by rememberSaveable { mutableStateOf(false) }
 
     Column {
 
         ScreenTitle("Recipes")
-        CustomTextField("Recipe Name", mealName) { newText -> mealName = newText }
+        CustomTextField("Recipe Name", mealName, showErrors) { newText -> mealName = newText }
         CustomButton("Add New Recipe") {
-            viewModel.addCustomMeal(mealName)
-            mealName = ""
+            if (mealName != "") {
+                viewModel.addCustomMeal(mealName)
+                mealName = ""
+                showErrors = false
+            }
+            else {
+                showErrors = true
+            }
         }
 
         LazyColumn {
@@ -72,14 +78,6 @@ fun MealsScreen(navController: NavController) {
                             text = meals[index].name,
                             fontSize = 18.sp,
                         )
-//                        Text(
-//                            modifier = Modifier
-//                                .padding(start = 15.dp)
-//                                .weight(1.0f),
-//                            text = mealDetailCount,
-//                            fontSize = 18.sp,
-//                        )
-
                         Icon(
                             modifier = Modifier.padding(end = 15.dp)
                                 .clickable { viewModel.deleteCustomMealById(meals[index].idm) },
@@ -110,32 +108,39 @@ fun MealDetailsScreen(idm: String?, mealArg: String?, navController: NavControll
     var productName by rememberSaveable { mutableStateOf("") }
     var productAmount by rememberSaveable { mutableStateOf("") }
     var unit by rememberSaveable { mutableStateOf("g") }
+    var showErrors by rememberSaveable { mutableStateOf(false) }
 
     Column {
 
         ScreenTitle("Meal Details")
 
-        CustomTextField("Meal Name", mealName) {
+        CustomTextField("Meal Name", mealName, showErrors) {
             newText -> mealName = newText
             viewModel.updateMealByID(mealID, mealName)
         }
 
-        CustomTextField("Product Name", productName) { newText -> productName = newText }
+        CustomTextField("Product Name", productName, showErrors) { newText -> productName = newText }
         Row() {
-            CustomNumberField("Amount of Product", productAmount, false) { newText ->
+            CustomNumberField("Amount of Product", productAmount, showErrors, false) { newText ->
                 productAmount = newText
             }
             UnitDropdownList(listOf("g", "ml"), unit) { selected -> unit = selected }
         }
         CustomButton("Add Product") {
-            viewModel.addMealDetail(
-                mealID,
-                productName,
-                productAmount + unit
-            )
-            productName = ""
-            productAmount = ""
-            unit = "g"
+            if (mealName == "" || productName == "" || productAmount == "") {
+                showErrors = true
+            }
+            else {
+                viewModel.addMealDetail(
+                    mealID,
+                    productName,
+                    productAmount + unit
+                )
+                productName = ""
+                productAmount = ""
+                unit = "g"
+                showErrors = false
+            }
         }
 
         LazyColumn {

@@ -44,6 +44,7 @@ fun WelcomeScreen(navController: NavController) {
 
     val activity = listOf("Sedentary", "Low", "Medium", "Athletic")
     val selectedActivity = rememberSaveable { mutableIntStateOf(-1) }
+    var showErrors by rememberSaveable { mutableStateOf(false) }
 
     Column(Modifier.padding(16.dp)) {
 
@@ -66,16 +67,16 @@ fun WelcomeScreen(navController: NavController) {
             }
         }
 
-        CustomNumberField("Height", height, true) { newVal -> height = newVal }
-        CustomNumberField("Body Mass", bodyMass, true) { newVal -> bodyMass = newVal }
+        CustomNumberField("Height", height,showErrors,true) { newVal -> height = newVal }
+        CustomNumberField("Body Mass", bodyMass, showErrors, true) { newVal -> bodyMass = newVal }
 
         Text(text = "Date of Birth", fontSize = 20.sp, modifier = Modifier.padding(4.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            CustomDateField("DD", day)
+            CustomDateField("DD", day, showErrors)
             Spacer(Modifier.width(4.dp))
-            CustomDateField("MM", month)
+            CustomDateField("MM", month, showErrors)
             Spacer(Modifier.width(4.dp))
-            CustomDateField("YYYY", year)
+            CustomDateField("YYYY", year, showErrors)
         }
 
         Text(text = "Activity Level", fontSize = 20.sp, modifier = Modifier.padding(4.dp))
@@ -95,34 +96,40 @@ fun WelcomeScreen(navController: NavController) {
         }
 
         CustomButton("Continue") {
-            val dateStr = "${day.value}/${month.value}/${year.value}"
 
-            val selectedDate = LocalDate.of(year.value.toInt(), month.value.toInt(), day.value.toInt())
-            val today = LocalDate.now()
-            val age = ChronoUnit.YEARS.between(selectedDate, today)
+            if (height == "" || bodyMass == "" || day.value == "" || month.value == "" || year.value == "") {
+                showErrors = true
+            }
+            else {
+                val dateStr = "${day.value}/${month.value}/${year.value}"
 
-            val budget = calculateCalorieBudget(
+                val selectedDate = LocalDate.of(year.value.toInt(), month.value.toInt(), day.value.toInt())
+                val today = LocalDate.now()
+                val age = ChronoUnit.YEARS.between(selectedDate, today)
+
+                val budget = calculateCalorieBudget(
                     selectedSex.value,
                     height.toDouble(),
                     bodyMass.toDouble(),
                     age.toInt(),
                     selectedActivity.intValue + 1
-            )
+                )
 
-            val nutrients = calculateMacros(budget)
+                val nutrients = calculateMacros(budget)
 
-            prefs.edit()
-                .putString("selected_date", dateStr)
-                .putInt("age", age.toInt())
-                .putInt("budget", budget)
-                .putInt("protein", nutrients.proteinGrams)
-                .putInt("fats", nutrients.fatGrams)
-                .putInt("carbs", nutrients.carbGrams)
-                .putString("height", height)
-                .putString("body_mass", bodyMass)
-                .putBoolean("setup_completed", true)
-                .apply()
-            navController.navigate(Screens.Home.route)
+                prefs.edit()
+                    .putString("selected_date", dateStr)
+                    .putInt("age", age.toInt())
+                    .putInt("budget", budget)
+                    .putInt("protein", nutrients.proteinGrams)
+                    .putInt("fats", nutrients.fatGrams)
+                    .putInt("carbs", nutrients.carbGrams)
+                    .putString("height", height)
+                    .putString("body_mass", bodyMass)
+                    .putBoolean("setup_completed", true)
+                    .apply()
+                navController.navigate(Screens.Home.route)
+            }
         }
     }
 }

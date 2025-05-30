@@ -104,6 +104,7 @@ fun ChartScreen() {
     val masses by viewModel.massesState.collectAsStateWithLifecycle()
     val todayMass by viewModel.todayMassState.collectAsStateWithLifecycle()
     val calorieByDate by viewModel.calorieSumByDate.collectAsStateWithLifecycle()
+    var showErrors by rememberSaveable { mutableStateOf(false) }
 
     var bodyMass by rememberSaveable { mutableStateOf("") }
     LaunchedEffect(todayMass) {
@@ -210,12 +211,27 @@ fun ChartScreen() {
                 .padding(horizontal = 8.dp, vertical = 15.dp)
         )
 
-        CustomNumberField("Body Mass", bodyMass, true) { newValue -> bodyMass = newValue }
+        CustomNumberField("Body Mass", bodyMass, showErrors, true) { newValue -> bodyMass = newValue }
         CustomButton("Save") {
-            if (todayMass == null)
-                viewModel.addMass(bodyMass.toDouble())
-            else
-                viewModel.updateMassById(todayMass.id, bodyMass.toDouble())
+            if (todayMass == null) {
+                if (bodyMass != "") {
+                    viewModel.addMass(bodyMass.toDouble())
+                    showErrors = false
+                }
+                else {
+                    showErrors = true
+                }
+            }
+
+            else {
+                if (bodyMass != "") {
+                    viewModel.updateMassById(todayMass.id, bodyMass.toDouble())
+                    showErrors = false
+                }
+                else {
+                    showErrors = true
+                }
+            }
         }
     }
 }

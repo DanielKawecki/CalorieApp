@@ -1,6 +1,7 @@
 package pl.edu.uwr.pam.calorieapp
 
 import android.app.Application
+import android.content.Context
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.SizeTransform
@@ -46,23 +47,46 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 
+fun loadFoods(context: Context): List<String> {
+    return context.assets.open("foods.txt")
+        .bufferedReader()
+        .useLines { it.toList() }
+}
+
 @Composable
 fun Search(meal: String?, viewModel: ProductViewModel, navController: NavHostController) {
     var productName by rememberSaveable { mutableStateOf("") }
     var amount by rememberSaveable { mutableStateOf("") }
     var unit by rememberSaveable { mutableStateOf("g") }
+    var showErrors by rememberSaveable { mutableStateOf(false) }
+    var foodInput by rememberSaveable { mutableStateOf("") }
+
+    val context = LocalContext.current
+    val foods = rememberSaveable { loadFoods(context) }
 
     Column (modifier = Modifier.fillMaxSize()) {
-        CustomTextField("Product Name", productName) { newText -> productName = newText }
+        CustomTextField("Product Name", productName, showErrors) { newText -> productName = newText }
+        FoodInputField(
+            value = foodInput,
+            onValueChange = { foodInput = it },
+            foodList = foods
+        )
 
         Row() {
-            CustomNumberField("Amount of Product", amount, false) { newText -> amount = newText }
+            CustomNumberField("Amount of Product", amount, showErrors, false) { newText -> amount = newText }
             UnitDropdownList(listOf("g", "ml"), "g") { selected -> unit = selected }
         }
 
         CustomButton("Add Product") {
-            if (meal != null) viewModel.addWithNutrition(productName, amount + unit, meal)
-            navController.navigate(Screens.Home.route)
+            if (productName == "" || amount == "") {
+                showErrors = true
+            }
+            else {
+                if (meal != null) {
+                    viewModel.addWithNutrition(productName, amount + unit, meal)
+                }
+                navController.navigate(Screens.Home.route)
+            }
         }
     }
 }
