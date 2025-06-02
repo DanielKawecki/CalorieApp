@@ -87,11 +87,18 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Navigation(){
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
     Scaffold(
-        bottomBar = { BottomMenu(navController = navController)},
+        bottomBar = { if (showBottomBar(currentRoute)) {BottomMenu(navController = navController)}},
         content = { innerPadding ->
             BottomNavGraph(navController = navController, padding = innerPadding) },
     )
+}
+
+fun showBottomBar(route: String?): Boolean {
+    val bottomBarRoutes = listOf("welcome")
+    return !bottomBarRoutes.contains(route)
 }
 
 @Composable
@@ -145,8 +152,8 @@ fun BottomMenu(navController: NavHostController){
                 selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                 onClick = {navController.navigate(screen.route)},
                 colors = NavigationBarItemColors(
-                    selectedIconColor =  Color.DarkGray,//Color(88, 190, 249),
-                    selectedTextColor = Color.DarkGray,//Color(88, 190, 249),
+                    selectedIconColor =  Color.DarkGray,
+                    selectedTextColor = Color.DarkGray,
                     selectedIndicatorColor = Color(220, 220, 220, 0),
                     unselectedIconColor = Color.Gray,
                     unselectedTextColor = Color.Gray,

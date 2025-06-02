@@ -31,15 +31,24 @@ fun EditScreen(idArg: String?, nameArg: String?, amountArg: String?, navControll
 
     var productName by rememberSaveable { mutableStateOf(nameArg!!) }
     var amount by rememberSaveable { mutableStateOf(amountNumber) }
-    var unit by rememberSaveable { mutableStateOf(amountUnit) }
+    val unit = rememberSaveable { mutableStateOf(amountUnit) }
     var showErrors by rememberSaveable { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val foods = rememberSaveable { loadFoods(context) }
 
     Column {
 
 //        Text(text = "Edit", fontSize = 20.sp)
         ScreenTitle("Edit")
 
-        CustomTextField("Name", productName, showErrors) { newVal -> productName = newVal }
+//        CustomTextField("Name", productName, showErrors) { newVal -> productName = newVal }
+        FoodInputField(
+            value = productName,
+            onValueChange = { productName = it },
+            foodList = foods,
+            showError = showErrors
+        )
 //        TextField(
 //            value = productName,
 //            onValueChange = { productName = it },
@@ -48,7 +57,8 @@ fun EditScreen(idArg: String?, nameArg: String?, amountArg: String?, navControll
 
         Row() {
             CustomNumberField("Amount of Product", amount, showErrors, false) { newText -> amount = newText }
-            UnitDropdownList(listOf("g", "ml"), unit) { selected -> unit = selected }
+//            UnitDropdownList(listOf("g", "ml"), unit) { selected -> unit = selected }
+            CustomUnitField("Unit", unit, showErrors)
         }
 
         CustomButton("Update") {
@@ -56,7 +66,7 @@ fun EditScreen(idArg: String?, nameArg: String?, amountArg: String?, navControll
                 showErrors = true
             }
             else {
-                viewModel.updateProductById(idArg!!.toInt(), productName, amount + unit)
+                viewModel.updateProductById(idArg!!.toInt(), productName, amount + unit.value)
                 navController.navigate(Screens.Home.route)
             }
         }

@@ -32,6 +32,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -81,28 +82,11 @@ fun ScreenTitle(title: String) {
 @Composable
 fun CustomButton(content: String , function: () -> Unit) {
 
-//    OutlinedButton(
-//        onClick = { function() },
-//        colors = ButtonDefaults.buttonColors(
-//            contentColor = Color.Black,
-//            containerColor = Color.Transparent,
-//            ),
-//        shape = RoundedCornerShape(5.dp)
-//    ) {
-//        Text("Add")
-//    }
-
     OutlinedButton(
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth()
-//            .shadow(
-//                elevation = 3.dp,
-//                shape = RoundedCornerShape(8.dp)
-//            )
-//            .background(Color.White)
             .size(60.dp),
-//            .background(Color.White, shape = RoundedCornerShape(5.dp)),
         onClick = { function() },
         colors = ButtonColors(
             contentColor = Color.Black,
@@ -150,33 +134,45 @@ fun CustomTextField(label: String, content: String, showError: Boolean, onValueC
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FoodInputField(
     value: String,
     onValueChange: (String) -> Unit,
     foodList: List<String>,
-    modifier: Modifier = Modifier
+    showError: Boolean
 ) {
     var showSuggestions by remember { mutableStateOf(true) }
 
     val suggestions = remember(value, showSuggestions) {
         if (value.length >= 2 && showSuggestions)
             foodList
-                .filter { it.startsWith(value, ignoreCase = true) }
+                .filter { it.startsWith(value, ignoreCase = true) && !it.equals(value, ignoreCase = true) }
                 .take(8)
         else
             emptyList()
     }
 
-    Column(modifier = modifier) {
+    val isError = showError && value.isBlank()
+
+    Column(modifier = Modifier) {
         OutlinedTextField(
             value = value,
             onValueChange = {
                 onValueChange(it)
-                showSuggestions = true // allow suggestions while typing
+                showSuggestions = true
             },
-            label = { Text("Food") },
-            modifier = Modifier.fillMaxWidth()
+            label = { Text("Product Name") },
+            modifier = Modifier
+                .padding(4.dp)
+                .fillMaxWidth(),
+            textStyle = TextStyle(fontSize = 20.sp, color = Color.DarkGray),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedBorderColor = Color.DarkGray,
+                focusedLabelColor = Color.DarkGray,
+                cursorColor = Color.DarkGray
+            ),
+            isError = isError
         )
 
         suggestions.forEach { suggestion ->
@@ -186,7 +182,7 @@ fun FoodInputField(
                     .fillMaxWidth()
                     .clickable {
                         onValueChange(suggestion)
-                        showSuggestions = false // hide suggestions after selection
+                        showSuggestions = false
                     }
                     .padding(8.dp),
                 fontSize = 16.sp
@@ -236,6 +232,28 @@ fun CustomDateField(label: String, state: MutableState<String>, showError: Boole
             .width(if (label == "YYYY") 120.dp else 80.dp)
             .padding(4.dp),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        singleLine = true,
+        textStyle = TextStyle(fontSize = 20.sp, color = Color.DarkGray),
+        colors = TextFieldDefaults.outlinedTextFieldColors(
+            focusedBorderColor = Color.DarkGray,
+            focusedLabelColor = Color.DarkGray,
+            cursorColor = Color.DarkGray
+        ),
+        isError = isError
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CustomUnitField(label: String, state: MutableState<String>, showError: Boolean) {
+
+    val isError = showError && state.value.isBlank()
+
+    OutlinedTextField(
+        value = state.value,
+        onValueChange = { input -> state.value = input },
+        label = { Text(label) },
+        modifier = Modifier.padding(4.dp).fillMaxWidth(),
         singleLine = true,
         textStyle = TextStyle(fontSize = 20.sp, color = Color.DarkGray),
         colors = TextFieldDefaults.outlinedTextFieldColors(
@@ -400,32 +418,8 @@ fun DetailEntry(detail: MealDetail, onDelete: () -> Unit, onEdit: () -> Unit) {
                 fontSize = 14.sp,
                 color = Color.Gray
             )
-//            Text(
-//                modifier = Modifier.padding(start = 30.dp, bottom = 10.dp),
-//                text = "${detail.calorie} kcal",
-//                fontSize = 14.sp,
-//                color = Color.Gray
-//            )
-//            Text(
-//                modifier = Modifier.padding(start = 30.dp, bottom = 10.dp),
-//                text = "${detail.fats} g",
-//                fontSize = 14.sp,
-//                color = Color.Gray
-//            )
-//            Text(
-//                modifier = Modifier.padding(start = 30.dp, bottom = 10.dp),
-//                text = "${detail.carbs} g",
-//                fontSize = 14.sp,
-//                color = Color.Gray
-//            )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun ProductEntryPreview() {
-//    ProductEntry(Product(0, "Salt", "20g", "Dinner", 237, 0.3, 2.3, 67.0, "23"))
 }
 
 @Composable
@@ -488,7 +482,14 @@ fun UnitDropdownList(units: List<String>, selected: String, onValueChange: (Stri
             value = selected,
             onValueChange = {},
             readOnly = true,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = TextFieldDefaults.textFieldColors(
+                containerColor = Color.LightGray,
+                focusedIndicatorColor = Color.Gray,
+                unfocusedIndicatorColor = Color.DarkGray,
+                focusedLabelColor = Color.Gray,
+                unfocusedLabelColor = Color.DarkGray,
+            )
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = !expanded }) {
             units.forEach { text ->
@@ -498,7 +499,12 @@ fun UnitDropdownList(units: List<String>, selected: String, onValueChange: (Stri
                         onValueChange(text)
                         expanded = false
                     },
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                    colors = MenuDefaults.itemColors(
+                        textColor = Color.Black,
+                        disabledTextColor = Color.Gray
+                    ),
+                    modifier = Modifier.background(Color(0xFFE0E0E0)) // light gray background
                 )
             }
         }
@@ -517,10 +523,4 @@ fun AddButton(onAdd: () -> Unit) {
     ) {
         Text("Add")
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun AddButtonPreview() {
-//    AddButton()
 }

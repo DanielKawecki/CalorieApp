@@ -28,6 +28,8 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -36,6 +38,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -57,24 +60,23 @@ fun loadFoods(context: Context): List<String> {
 fun Search(meal: String?, viewModel: ProductViewModel, navController: NavHostController) {
     var productName by rememberSaveable { mutableStateOf("") }
     var amount by rememberSaveable { mutableStateOf("") }
-    var unit by rememberSaveable { mutableStateOf("g") }
+    val unit = rememberSaveable { mutableStateOf("g") }
     var showErrors by rememberSaveable { mutableStateOf(false) }
-    var foodInput by rememberSaveable { mutableStateOf("") }
 
     val context = LocalContext.current
     val foods = rememberSaveable { loadFoods(context) }
 
     Column (modifier = Modifier.fillMaxSize()) {
-        CustomTextField("Product Name", productName, showErrors) { newText -> productName = newText }
         FoodInputField(
-            value = foodInput,
-            onValueChange = { foodInput = it },
-            foodList = foods
+            value = productName,
+            onValueChange = { productName = it },
+            foodList = foods,
+            showError = showErrors
         )
 
-        Row() {
+        Row(verticalAlignment = Alignment.Bottom) {
             CustomNumberField("Amount of Product", amount, showErrors, false) { newText -> amount = newText }
-            UnitDropdownList(listOf("g", "ml"), "g") { selected -> unit = selected }
+            CustomUnitField("Unit", unit, showErrors)
         }
 
         CustomButton("Add Product") {
@@ -83,7 +85,7 @@ fun Search(meal: String?, viewModel: ProductViewModel, navController: NavHostCon
             }
             else {
                 if (meal != null) {
-                    viewModel.addWithNutrition(productName, amount + unit, meal)
+                    viewModel.addWithNutrition(productName, amount + unit.value, meal)
                 }
                 navController.navigate(Screens.Home.route)
             }
@@ -143,11 +145,21 @@ fun AddScreen(meal: String?, navController: NavHostController) {
         ScreenTitle("Add Product")
 
         Column(modifier = Modifier.fillMaxWidth()) {
-            TabRow(selectedTabIndex = tabIndex) {
+            TabRow(
+                selectedTabIndex = tabIndex,
+                indicator = { tabPositions ->
+                    TabRowDefaults.Indicator(
+                        Modifier.tabIndicatorOffset(tabPositions[tabIndex]),
+                        color = Color.DarkGray
+                    )
+                }
+            ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(text = { Text(title) },
                         selected = tabIndex == index,
-                        onClick = { tabIndex = index }
+                        onClick = { tabIndex = index },
+                        unselectedContentColor = Color.Gray,
+                        selectedContentColor = Color.DarkGray
                     )
                 }
             }

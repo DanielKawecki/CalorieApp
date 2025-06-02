@@ -107,8 +107,11 @@ fun MealDetailsScreen(idm: String?, mealArg: String?, navController: NavControll
     var mealName by rememberSaveable { mutableStateOf(mealArg!!) }
     var productName by rememberSaveable { mutableStateOf("") }
     var productAmount by rememberSaveable { mutableStateOf("") }
-    var unit by rememberSaveable { mutableStateOf("g") }
+    val unit = rememberSaveable { mutableStateOf("g") }
     var showErrors by rememberSaveable { mutableStateOf(false) }
+
+    val context = LocalContext.current
+    val foods = rememberSaveable { loadFoods(context) }
 
     Column {
 
@@ -119,12 +122,18 @@ fun MealDetailsScreen(idm: String?, mealArg: String?, navController: NavControll
             viewModel.updateMealByID(mealID, mealName)
         }
 
-        CustomTextField("Product Name", productName, showErrors) { newText -> productName = newText }
+        FoodInputField(
+            value = productName,
+            onValueChange = { productName = it },
+            foodList = foods,
+            showError = showErrors
+        )
+
         Row() {
             CustomNumberField("Amount of Product", productAmount, showErrors, false) { newText ->
                 productAmount = newText
             }
-            UnitDropdownList(listOf("g", "ml"), unit) { selected -> unit = selected }
+            CustomUnitField("Unit", unit, showErrors)
         }
         CustomButton("Add Product") {
             if (mealName == "" || productName == "" || productAmount == "") {
@@ -134,11 +143,11 @@ fun MealDetailsScreen(idm: String?, mealArg: String?, navController: NavControll
                 viewModel.addMealDetail(
                     mealID,
                     productName,
-                    productAmount + unit
+                    productAmount + unit.value
                 )
                 productName = ""
                 productAmount = ""
-                unit = "g"
+                unit.value = "g"
                 showErrors = false
             }
         }

@@ -1,12 +1,15 @@
 package pl.edu.uwr.pam.calorieapp
 
 import android.content.Context
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
@@ -40,13 +43,13 @@ fun WelcomeScreen(navController: NavController) {
     val year = rememberSaveable { mutableStateOf("") }
 
     val sex = listOf("Male", "Female")
-    val selectedSex = rememberSaveable { mutableStateOf("") }
+    val selectedSex = rememberSaveable { mutableStateOf("Male") }
 
     val activity = listOf("Sedentary", "Low", "Medium", "Athletic")
-    val selectedActivity = rememberSaveable { mutableIntStateOf(-1) }
+    val selectedActivity = rememberSaveable { mutableIntStateOf(0) }
     var showErrors by rememberSaveable { mutableStateOf(false) }
 
-    Column(Modifier.padding(16.dp)) {
+    Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState())) {
 
         ScreenTitle("Welcome")
 

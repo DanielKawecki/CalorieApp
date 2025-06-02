@@ -27,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,6 +66,14 @@ fun HomeScreen(navController: NavHostController) {
     val total by viewModel.nutrientsSum.collectAsStateWithLifecycle()
 
     var showMessage by rememberSaveable { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        val lastDismissTime = prefs.getLong("message_dismiss_time", 0L)
+        val now = System.currentTimeMillis()
+        val oneDayMillis = 24 * 60 * 60 * 1000L
+
+        showMessage = now - lastDismissTime > oneDayMillis
+    }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -149,7 +158,10 @@ fun HomeScreen(navController: NavHostController) {
                     fontSize = 14.sp
                 )
                 IconButton(
-                    onClick = { showMessage = false },
+                    onClick = {
+                        showMessage = false
+                        prefs.edit().putLong("message_dismiss_time", System.currentTimeMillis()).apply()
+                              },
                     modifier = Modifier
                         .size(24.dp)
                         .clickable(

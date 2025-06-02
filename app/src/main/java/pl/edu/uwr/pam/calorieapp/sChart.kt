@@ -165,9 +165,6 @@ fun ChartScreen() {
                 .padding(horizontal = 8.dp, vertical = 15.dp)
         )
 
-//        for (item in calorieByDate) {
-//            Text(text = "Date: ${item.date}, Value: ${item.calorie}", fontSize = 20.sp)
-//        }
         AndroidView(
             factory = { context ->
                 LineChart(context).apply {

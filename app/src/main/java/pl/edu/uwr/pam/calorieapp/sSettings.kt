@@ -2,6 +2,7 @@ package pl.edu.uwr.pam.calorieapp
 
 import android.app.Application
 import android.content.Context
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchColors
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -24,6 +27,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -113,54 +117,32 @@ fun SettingsScreen(navController: NavController) {
         Row (
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
+
+            Box(
+                modifier = Modifier.scale(0.8f)
+            ) {
+                Switch(
+                    checked = checked,
+                    onCheckedChange = {
+                        checked = it
+                        prefs.edit().putBoolean("notifications_enabled", it).apply()
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.DarkGray,
+                        uncheckedThumbColor = Color.Gray,
+                        checkedTrackColor = Color.Gray,
+                        uncheckedTrackColor = Color.LightGray
+                    )
+                )
+            }
             Text(
-                modifier = Modifier.weight(1.0f),
+                modifier = Modifier.padding(horizontal = 20.dp),
                 text = "Notifications",
                 fontSize = 20.sp
             )
-            Switch(
-                checked = checked,
-                onCheckedChange = {
-                    checked = it
-                    prefs.edit().putBoolean("notifications_enabled", it).apply()
-                }
-            )
-        }
-        DebugNotificationButton()
-
-        Button(
-            onClick = {
-                viewModel.addSampleMass(60.0, "2025-04-10 12:00:00")
-                viewModel.addSampleMass(63.0, "2025-04-13 12:15:00")
-                viewModel.addSampleMass(62.0, "2025-04-20 12:30:00")
-                viewModel.addSampleMass(63.5, "2025-04-24 12:30:00")
-                viewModel.addSampleMass(64.4, "2025-04-31 12:30:00")
-                viewModel.addSampleMass(63.3, "2025-05-01 12:30:00")
-                viewModel.addSampleMass(65.0, "2025-05-02 12:30:00")
-                viewModel.addSampleMass(64.4, "2025-05-03 12:30:00")
-
-                viewModel.addSampleProduct(2300, "2025-04-10 12:00:00")
-                viewModel.addSampleProduct(2370, "2025-04-13 12:15:00")
-                viewModel.addSampleProduct(2137, "2025-04-20 12:30:00")
-                viewModel.addSampleProduct(2380, "2025-04-24 12:30:00")
-                viewModel.addSampleProduct(2450, "2025-04-31 12:30:00")
-                viewModel.addSampleProduct(2390, "2025-05-01 12:30:00")
-                viewModel.addSampleProduct(2420, "2025-05-02 12:30:00")
-                viewModel.addSampleProduct(2460, "2025-05-03 12:30:00")
-            }
-        ) {
-            Text(text = "Insert Sample Data", fontSize = 20.sp)
-        }
-
-        Button(
-            onClick = {
-                viewModel.clearAllProducts()
-                viewModel.clearAllMass()
-            }
-        ) {
-            Text(text = "Clear All Data", fontSize = 20.sp)
         }
 
         CustomButton("Reload Calorie Budget") {
@@ -199,11 +181,40 @@ fun SettingsScreen(navController: NavController) {
                 navController.navigate(Screens.Home.route)
             }
         }
+
+        DebugNotificationButton()
+
+        Button(
+            onClick = {
+                viewModel.addSampleMass(60.0, "2025-04-10 12:00:00")
+                viewModel.addSampleMass(63.0, "2025-04-13 12:15:00")
+                viewModel.addSampleMass(62.0, "2025-04-20 12:30:00")
+                viewModel.addSampleMass(63.5, "2025-04-24 12:30:00")
+                viewModel.addSampleMass(64.4, "2025-04-31 12:30:00")
+                viewModel.addSampleMass(63.3, "2025-05-01 12:30:00")
+                viewModel.addSampleMass(65.0, "2025-05-02 12:30:00")
+                viewModel.addSampleMass(64.4, "2025-05-03 12:30:00")
+
+                viewModel.addSampleProduct(2300, "2025-04-10 12:00:00")
+                viewModel.addSampleProduct(2370, "2025-04-13 12:15:00")
+                viewModel.addSampleProduct(2137, "2025-04-20 12:30:00")
+                viewModel.addSampleProduct(2380, "2025-04-24 12:30:00")
+                viewModel.addSampleProduct(2450, "2025-04-31 12:30:00")
+                viewModel.addSampleProduct(2390, "2025-05-01 12:30:00")
+                viewModel.addSampleProduct(2420, "2025-05-02 12:30:00")
+                viewModel.addSampleProduct(2460, "2025-05-03 12:30:00")
+            }
+        ) {
+            Text(text = "Insert Sample Data", fontSize = 20.sp)
+        }
+
+        Button(
+            onClick = {
+                viewModel.clearAllProducts()
+                viewModel.clearAllMass()
+            }
+        ) {
+            Text(text = "Clear All Data", fontSize = 20.sp)
+        }
     }
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun SettingsPreview() {
-//    SettingsScreen()
-//}
